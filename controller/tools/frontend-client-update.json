@@ -1,0 +1,53 @@
+﻿{
+    "id":  "84cdec54-f077-4700-bcb8-5b8e550d60e7",
+    "clientId":  "Frontend",
+    "name":  "Frontend",
+    "surrogateAuthRequired":  false,
+    "enabled":  true,
+    "alwaysDisplayInConsole":  false,
+    "clientAuthenticatorType":  "client-secret",
+    "redirectUris":  [
+                         "http://localhost:3000/*",
+                         "http://192.168.100.3:3000/*"
+                     ],
+    "webOrigins":  [
+                       "http://localhost:3000",
+                       "http://192.168.100.3:3000"
+                   ],
+    "notBefore":  0,
+    "bearerOnly":  false,
+    "consentRequired":  false,
+    "standardFlowEnabled":  true,
+    "implicitFlowEnabled":  false,
+    "directAccessGrantsEnabled":  true,
+    "serviceAccountsEnabled":  false,
+    "publicClient":  true,
+    "frontchannelLogout":  false,
+    "protocol":  "openid-connect",
+    "attributes":  {
+                       "post.logout.redirect.uris":  "+"
+                   },
+    "authenticationFlowBindingOverrides":  {
+
+                                           },
+    "fullScopeAllowed":  true,
+    "nodeReRegistrationTimeout":  -1,
+    "defaultClientScopes":  [
+                                "web-origins",
+                                "acr",
+                                "roles",
+                                "profile",
+                                "email"
+                            ],
+    "optionalClientScopes":  [
+                                 "address",
+                                 "phone",
+                                 "offline_access",
+                                 "microprofile-jwt"
+                             ],
+    "access":  {
+                   "view":  true,
+                   "configure":  true,
+                   "manage":  true
+               }
+}

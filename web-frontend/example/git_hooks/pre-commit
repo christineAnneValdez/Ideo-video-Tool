@@ -1,0 +1,11 @@
+#!/bin/bash
+#
+# SPDX-FileCopyrightText: OpenTalk GmbH <mail@opentalk.eu>
+#
+# SPDX-License-Identifier: EUPL-1.2
+pnpm run -r fmt:ci &&\
+pnpm lint --no-inline-config --max-warnings 0 && \
+CI=true  pnpm test && \
+yamllint . && \
+licensee --production --errors-only && \
+pnpm audit --prod

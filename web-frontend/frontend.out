@@ -1,0 +1,10 @@
+
+> @opentalk/monorepo@2.9.0-dev start C:\personal works\ideo-videotool\web-frontend
+> pnpm build:libs && pnpm --filter '@opentalk/opentalk' start
+
+
+> @opentalk/monorepo@2.9.0-dev build:libs C:\personal works\ideo-videotool\web-frontend
+> del-cli packages/**/*/dist && pnpm --filter './packages/**' run build
+
+No projects matched the filters in "C:\personal works\ideo-videotool\web-frontend"
+ ELIFECYCLE  Command failed with exit code 3221225786.

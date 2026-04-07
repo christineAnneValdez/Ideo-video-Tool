@@ -1,0 +1,10 @@
+test/
+src/
+coverage/
+.editorconfig
+.eslintignore
+.eslintrc
+.gitignore
+bower.json
+gulpfile.js
+karma.conf.js

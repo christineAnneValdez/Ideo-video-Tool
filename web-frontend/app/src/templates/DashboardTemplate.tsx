@@ -1,0 +1,260 @@
+// SPDX-FileCopyrightText: OpenTalk GmbH <mail@opentalk.eu>
+//
+// SPDX-License-Identifier: EUPL-1.2
+import { Container as MuiContainer, Grid, Paper, Skeleton, Stack, styled } from '@mui/material';
+import { selectIsAuthenticated } from '@opentalk/redux-oidc';
+import React, { useEffect, useState } from 'react';
+import { Outlet, useLocation, useNavigate } from 'react-router-dom';
+
+import {
+  HomeIcon,
+  SettingsIcon,
+  MeetingsIcon,
+  MyAccountIcon,
+  DashboardLegalIcon,
+  HelpSquareIcon,
+  RecordingsIcon,
+} from '../assets/icons';
+import DashboardNavigation, { PrimaryRoute } from '../components/DashboardNavigation';
+import { useAppSelector } from '../hooks';
+import useIsAdminUser from '../hooks/useIsAdminUser';
+import { useIsDesktop } from '../hooks/useMediaQuery';
+import { selectIsProviderActive } from '../store/slices/configSlice';
+import BrowserCompatibilityInfo from './fragments/BrowserCompatibilityInfo';
+import DashboardLogo from './fragments/DashboardLogo';
+
+const Main = styled('main')(({ theme }) => ({
+  height: '100%',
+  flex: 1,
+  padding: theme.spacing(3, 5),
+  overflowX: 'auto',
+  zIndex: 1,
+  color: theme.palette.background.main.contrastText,
+  [theme.breakpoints.down('md')]: {
+    padding: theme.spacing(3, 2),
+    overflowX: 'unset',
+  },
+}));
+
+const Container = styled(MuiContainer)(({ theme }) => ({
+  width: '100%',
+  '&::before': {
+    position: 'absolute',
+    inset: 0,
+    content: "''",
+    background: theme.palette.background.main.primary,
+    color: theme.palette.background.main.contrastText,
+    pointerEvents: 'none',
+  },
+}));
+
+const LoadingNavbarContainer = styled(Paper)(({ theme }) => ({
+  padding: theme.spacing(3),
+  width: 256,
+}));
+
+const MainStack = styled(Stack)(({ theme }) => ({
+  maxHeight: '100%',
+  height: 0,
+  [theme.breakpoints.up('md')]: {
+    height: '100%',
+  },
+})) as typeof Stack;
+
+const getRoutes = (useProviderSettings: boolean, isAdmin: boolean) => {
+  if (isAdmin) {
+    return [
+      {
+        icon: <RecordingsIcon />,
+        path: 'admin',
+        name: 'Recordings',
+        childRoutes: [
+          {
+            path: 'recordings',
+            name: 'Recordings',
+          },
+        ],
+      },
+    ] as Array<PrimaryRoute>;
+  }
+
+  const routes: Array<PrimaryRoute> = [
+    {
+      icon: <HomeIcon />,
+      path: '/dashboard/',
+      name: 'dashboard-home',
+    },
+    {
+      icon: <MeetingsIcon />,
+      path: 'meetings',
+      name: 'dashboard-meetings',
+    },
+    {
+      icon: <HelpSquareIcon />,
+      path: 'help',
+      name: 'dashboard-help',
+      childRoutes: [
+        {
+          path: 'user-manual',
+          name: 'dashboard-help-user-manual',
+        },
+        {
+          path: 'support',
+          name: 'dashboard-help-support',
+        },
+      ],
+    },
+  ];
+
+  if (useProviderSettings) {
+    const providerMenu = {
+      icon: <MyAccountIcon />,
+      path: 'settings',
+      name: 'dashboard-my-profile',
+      childRoutes: [
+        {
+          path: 'profile',
+          name: 'dashboard-settings-profile',
+        },
+      ],
+    };
+    routes.push(providerMenu);
+  } else {
+    const communityUsers = {
+      icon: <SettingsIcon />,
+      path: 'settings',
+      name: 'dashboard-settings',
+      childRoutes: [
+        {
+          path: 'general',
+          name: 'dashboard-settings-general',
+        },
+        {
+          path: 'profile',
+          name: 'dashboard-settings-profile',
+        },
+        {
+          path: 'account',
+          name: 'dashboard-settings-account',
+        },
+        {
+          path: 'storage',
+          name: 'dashboard-settings-storage',
+        },
+      ],
+    };
+    routes.push(communityUsers);
+  }
+
+  const legalLinks = {
+    icon: <DashboardLegalIcon />,
+    path: 'legal',
+    name: 'dashboard-legal',
+    childRoutes: [
+      {
+        path: 'imprint',
+        name: 'dashboard-legal-imprint',
+      },
+      {
+        path: 'data-protection',
+        name: 'dashboard-legal-data-protection',
+      },
+    ],
+  };
+  routes.push(legalLinks);
+
+  return routes;
+};
+
+const DashboardTemplate = () => {
+  const [header, setHeader] = useState<React.ReactNode>();
+  const isAuthenticated = useAppSelector(selectIsAuthenticated);
+  const isDesktop = useIsDesktop();
+  const isProviderActive = useAppSelector(selectIsProviderActive);
+  const isAdmin = useIsAdminUser();
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (isAdmin && !location.pathname.startsWith('/dashboard/admin')) {
+      navigate('/dashboard/admin/recordings', { replace: true });
+    }
+  }, [isAdmin, location.pathname, navigate]);
+
+  if (!isAuthenticated) {
+    return (
+      <BrowserCompatibilityInfo>
+        <Container maxWidth={false} disableGutters>
+          <Stack
+            direction={{ xs: 'column', md: 'row' }}
+            sx={{
+              height: '100%',
+            }}
+          >
+            {isDesktop && (
+              <LoadingNavbarContainer elevation={0}>
+                <Stack spacing={12}>
+                  <Grid
+                    container
+                    spacing={1}
+                    sx={{
+                      alignItems: 'center',
+                    }}
+                  >
+                    <Grid>
+                      <Skeleton variant="circular" width={40} height={40} />
+                    </Grid>
+                    <Grid size="grow">
+                      <Skeleton variant="text" />
+                    </Grid>
+                  </Grid>
+                  <Stack spacing={1}>
+                    <Skeleton variant="text" width={208} height={56} />
+                    <Skeleton variant="text" width={208} height={56} />
+                    <Skeleton variant="text" width={208} height={56} />
+                    <Skeleton variant="text" width={208} height={56} />
+                    <Skeleton variant="text" width={208} height={56} />
+                    <Skeleton variant="text" width={208} height={56} />
+                  </Stack>
+                </Stack>
+              </LoadingNavbarContainer>
+            )}
+            <Main>
+              <DashboardLogo />
+              <Stack spacing={2}>
+                <Skeleton variant="text" />
+                <Skeleton />
+                <Skeleton variant="rectangular" width="100%" height={400} />
+              </Stack>
+            </Main>
+          </Stack>
+        </Container>
+      </BrowserCompatibilityInfo>
+    );
+  }
+  return (
+    <BrowserCompatibilityInfo>
+      <Container maxWidth={false} disableGutters>
+        <Stack
+          direction={{ xs: 'column', md: 'row' }}
+          sx={{
+            height: '100%',
+          }}
+        >
+          <DashboardNavigation routes={getRoutes(isProviderActive, isAdmin)} />
+          <MainStack component={Main} spacing={{ xs: 2, md: 5 }} id="main-content-dashboard">
+            {isDesktop && (
+              <>
+                <DashboardLogo />
+                {header}
+              </>
+            )}
+            <Outlet context={{ setHeader }} />
+          </MainStack>
+        </Stack>
+      </Container>
+    </BrowserCompatibilityInfo>
+  );
+};
+
+export default DashboardTemplate;

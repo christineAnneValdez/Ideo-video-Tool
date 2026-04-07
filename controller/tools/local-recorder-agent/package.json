@@ -1,0 +1,15 @@
+{
+  "name": "opentalk-local-recorder-agent",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Local LiveKit recorder agent that stores one wav file per participant audio track.",
+  "scripts": {
+    "start": "node index.mjs"
+  },
+  "dependencies": {
+    "@livekit/rtc-node": "^0.13.12",
+    "livekit-server-sdk": "^2.13.5",
+    "pg": "^8.20.0"
+  }
+}

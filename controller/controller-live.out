@@ -1,0 +1,155 @@
+**********************************************************************
+** Visual Studio 2022 Developer Command Prompt v17.14.29
+** Copyright (c) 2025 Microsoft Corporation
+**********************************************************************
+OpenTalk public host: localhost
+[2m2026-04-03T09:34:32.416179Z[0m [32m INFO[0m [2mopentalk_controller_core[0m[2m:[0m Starting OpenTalk Controller
+[2m2026-04-03T09:34:32.416302Z[0m [32m INFO[0m [2mopentalk_controller_core[0m[2m:[0m Global timezone is Etc/UTC
+[2m2026-04-03T09:34:33.281579Z[0m [32m INFO[0m [1minit[0m[1m{[0m[3moptional_config_path[0m[2m=[0mSome("example/controller.toml")[1m}[0m[2m:[0m [2mopentalk_signaling_core::object_storage[0m[2m:[0m Using MinIO S3 bucket: controller 
+[2m2026-04-03T09:34:33.675386Z[0m [32m INFO[0m [1minit[0m[1m{[0m[3moptional_config_path[0m[2m=[0mSome("example/controller.toml")[1m}[0m[2m:[0m [2mopentalk_controller_core[0m[2m:[0m Skipping module 'recording' due to missing configuration
+[2m2026-04-03T09:34:33.678400Z[0m [32m INFO[0m [1minit[0m[1m{[0m[3moptional_config_path[0m[2m=[0mSome("example/controller.toml")[1m}[0m[2m:[0m [2mopentalk_controller_core[0m[2m:[0m Skipping module 'meeting_notes' due to missing configuration
+[2m2026-04-03T09:34:33.678431Z[0m [32m INFO[0m [1minit[0m[1m{[0m[3moptional_config_path[0m[2m=[0mSome("example/controller.toml")[1m}[0m[2m:[0m [2mopentalk_controller_core[0m[2m:[0m Skipping module 'shared_folder' due to missing configuration
+[2m2026-04-03T09:34:33.678445Z[0m [32m INFO[0m [1minit[0m[1m{[0m[3moptional_config_path[0m[2m=[0mSome("example/controller.toml")[1m}[0m[2m:[0m [2mopentalk_controller_core[0m[2m:[0m Skipping module 'whiteboard' due to missing configuration
+[2m2026-04-03T09:34:33.678461Z[0m [32m INFO[0m [1minit[0m[1m{[0m[3moptional_config_path[0m[2m=[0mSome("example/controller.toml")[1m}[0m[2m:[0m [2mopentalk_controller_core[0m[2m:[0m Skipping module 'subroom_audio' due to missing configuration
+[2m2026-04-03T09:34:33.678494Z[0m [32m INFO[0m [2mopentalk_jobs::distributed::job_runner[0m[2m:[0m Starting JobRunner
+[2m2026-04-03T09:34:33.678499Z[0m [32m INFO[0m [2mopentalk_jobs::distributed::job_runner[0m[2m:[0m No etcd configuration, skipping JobRunner
+[2m2026-04-03T09:34:33.678542Z[0m [32m INFO[0m [2mopentalk_controller_core[0m[2m:[0m Making sure the default permissions are set
+[2m2026-04-03T09:34:33.679627Z[0m [32m INFO[0m [2mopentalk_controller_core[0m[2m:[0m Startup finished
+[2m2026-04-03T09:38:07.124709Z[0m [33m WARN[0m [1mHTTP request[0m[1m{[0m[3mhttp.method[0m[2m=[0mGET [3mhttp.route[0m[2m=[0mdefault [3mhttp.flavor[0m[2m=[0mHTTP/1.1 [3mhttp.scheme[0m[2m=[0mhttp [3mhttp.host[0m[2m=[0mlocalhost:11311 [3mhttp.user_agent[0m[2m=[0mMozilla/5.0 (Windows NT; Windows NT 10.0; en-PH) WindowsPowerShell/5.1.26100.7920 [3mhttp.target[0m[2m=[0m/v1/config [3motel.kind[0m[2m=[0m"server" [3mrequest_id[0m[2m=[0m25a94e00-94a5-4387-a863-2c4cbcd6f0ec[1m}[0m[2m:[0m [2mopentalk_controller_core::api::v1::middleware::user_auth[0m[2m:[0m Unable to parse access token or invite code, invalid Header provided
+
+[2m2026-04-03T09:43:14.302979Z[0m [33m WARN[0m [1mHTTP request[0m[1m{[0m[3mhttp.method[0m[2m=[0mGET [3mhttp.route[0m[2m=[0m/signaling [3mhttp.flavor[0m[2m=[0mHTTP/1.1 [3mhttp.scheme[0m[2m=[0mhttp [3mhttp.host[0m[2m=[0mlocalhost:11311 [3mhttp.user_agent[0m[2m=[0mMozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 [3mhttp.target[0m[2m=[0m/signaling [3motel.kind[0m[2m=[0m"server" [3mrequest_id[0m[2m=[0m9e8ae43f-358c-4f91-81e0-28b0345a520c [3mhttp.status_code[0m[2m=[0m101 [3motel.status_code[0m[2m=[0m"OK"[1m}[0m[2m:[0m [2mopentalk_controller_core::api::signaling::ws::actor[0m[2m:[0m Protocol error in websocket - exiting, I/O error *
+
+Caused by this error:
+  1: payload reached EOF before completing: None
+
+NOTE: Some redundant information has been removed from the lines marked with *. Set SNAFU_RAW_ERROR_MESSAGES=1 to disable this behavior.
+
+[2m2026-04-03T09:49:17.140698Z[0m [33m WARN[0m [1mHTTP request[0m[1m{[0m[3mhttp.method[0m[2m=[0mGET [3mhttp.route[0m[2m=[0m/signaling [3mhttp.flavor[0m[2m=[0mHTTP/1.1 [3mhttp.scheme[0m[2m=[0mhttp [3mhttp.host[0m[2m=[0mlocalhost:11311 [3mhttp.user_agent[0m[2m=[0mMozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 [3mhttp.target[0m[2m=[0m/signaling [3motel.kind[0m[2m=[0m"server" [3mrequest_id[0m[2m=[0mf45e3677-6a1f-4563-acd5-65d0b059f91b [3mhttp.status_code[0m[2m=[0m101 [3motel.status_code[0m[2m=[0m"OK"[1m}[0m[2m:[0m [2mopentalk_controller_core::api::signaling::ws::actor[0m[2m:[0m Protocol error in websocket - exiting, I/O error *
+
+Caused by this error:
+  1: payload reached EOF before completing: None
+
+NOTE: Some redundant information has been removed from the lines marked with *. Set SNAFU_RAW_ERROR_MESSAGES=1 to disable this behavior.
+
+[2m2026-04-03T10:07:59.623435Z[0m [33m WARN[0m [1mHTTP request[0m[1m{[0m[3mhttp.method[0m[2m=[0mGET [3mhttp.route[0m[2m=[0m/signaling [3mhttp.flavor[0m[2m=[0mHTTP/1.1 [3mhttp.scheme[0m[2m=[0mhttp [3mhttp.host[0m[2m=[0mlocalhost:11311 [3mhttp.user_agent[0m[2m=[0mMozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 [3mhttp.target[0m[2m=[0m/signaling [3motel.kind[0m[2m=[0m"server" [3mrequest_id[0m[2m=[0m7ab1d62c-8a92-4aed-85e0-18fe86a197e4 [3mhttp.status_code[0m[2m=[0m101 [3motel.status_code[0m[2m=[0m"OK"[1m}[0m[2m:[0m [2mopentalk_controller_core::api::signaling::ws::actor[0m[2m:[0m Protocol error in websocket - exiting, I/O error *
+
+Caused by this error:
+  1: payload reached EOF before completing: None
+
+NOTE: Some redundant information has been removed from the lines marked with *. Set SNAFU_RAW_ERROR_MESSAGES=1 to disable this behavior.
+
+[2m2026-04-03T10:14:27.253355Z[0m [33m WARN[0m [1mHTTP request[0m[1m{[0m[3mhttp.method[0m[2m=[0mGET [3mhttp.route[0m[2m=[0m/signaling [3mhttp.flavor[0m[2m=[0mHTTP/1.1 [3mhttp.scheme[0m[2m=[0mhttp [3mhttp.host[0m[2m=[0mlocalhost:11311 [3mhttp.user_agent[0m[2m=[0mMozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 [3mhttp.target[0m[2m=[0m/signaling [3motel.kind[0m[2m=[0m"server" [3mrequest_id[0m[2m=[0m77b7feaa-c083-43b8-9b5d-4e731e9bf9e5 [3mhttp.status_code[0m[2m=[0m101 [3motel.status_code[0m[2m=[0m"OK"[1m}[0m[2m:[0m [2mopentalk_controller_core::api::signaling::ws::actor[0m[2m:[0m Protocol error in websocket - exiting, I/O error *
+
+Caused by this error:
+  1: payload reached EOF before completing: None
+
+NOTE: Some redundant information has been removed from the lines marked with *. Set SNAFU_RAW_ERROR_MESSAGES=1 to disable this behavior.
+
+[2m2026-04-03T10:14:38.090404Z[0m [33m WARN[0m [1mHTTP request[0m[1m{[0m[3mhttp.method[0m[2m=[0mGET [3mhttp.route[0m[2m=[0m/signaling [3mhttp.flavor[0m[2m=[0mHTTP/1.1 [3mhttp.scheme[0m[2m=[0mhttp [3mhttp.host[0m[2m=[0mlocalhost:11311 [3mhttp.user_agent[0m[2m=[0mMozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0 [3mhttp.target[0m[2m=[0m/signaling [3motel.kind[0m[2m=[0m"server" [3mrequest_id[0m[2m=[0mf2449a38-36f8-4a44-a8e8-6c2663825245 [3mhttp.status_code[0m[2m=[0m101 [3motel.status_code[0m[2m=[0m"OK"[1m}[0m[2m:[0m [2mopentalk_controller_core::api::signaling::ws::actor[0m[2m:[0m Protocol error in websocket - exiting, I/O error *
+
+Caused by this error:
+  1: payload reached EOF before completing: None
+
+NOTE: Some redundant information has been removed from the lines marked with *. Set SNAFU_RAW_ERROR_MESSAGES=1 to disable this behavior.
+
+[2m2026-04-03T10:17:33.457389Z[0m [33m WARN[0m [1mHTTP request[0m[1m{[0m[3mhttp.method[0m[2m=[0mGET [3mhttp.route[0m[2m=[0m/signaling [3mhttp.flavor[0m[2m=[0mHTTP/1.1 [3mhttp.scheme[0m[2m=[0mhttp [3mhttp.host[0m[2m=[0mlocalhost:11311 [3mhttp.user_agent[0m[2m=[0mMozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 [3mhttp.target[0m[2m=[0m/signaling [3motel.kind[0m[2m=[0m"server" [3mrequest_id[0m[2m=[0m70e39aed-5954-429d-af95-1c806f5e4110 [3mhttp.status_code[0m[2m=[0m101 [3motel.status_code[0m[2m=[0m"OK"[1m}[0m[2m:[0m [2mopentalk_controller_core::api::signaling::ws::actor[0m[2m:[0m Protocol error in websocket - exiting, I/O error *
+
+Caused by this error:
+  1: payload reached EOF before completing: None
+
+NOTE: Some redundant information has been removed from the lines marked with *. Set SNAFU_RAW_ERROR_MESSAGES=1 to disable this behavior.
+
+[2m2026-04-03T10:17:48.442360Z[0m [33m WARN[0m [1mHTTP request[0m[1m{[0m[3mhttp.method[0m[2m=[0mGET [3mhttp.route[0m[2m=[0m/signaling [3mhttp.flavor[0m[2m=[0mHTTP/1.1 [3mhttp.scheme[0m[2m=[0mhttp [3mhttp.host[0m[2m=[0mlocalhost:11311 [3mhttp.user_agent[0m[2m=[0mMozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0 [3mhttp.target[0m[2m=[0m/signaling [3motel.kind[0m[2m=[0m"server" [3mrequest_id[0m[2m=[0ma8df95f8-cbb3-4285-b04d-a2dcae457fbb [3mhttp.status_code[0m[2m=[0m101 [3motel.status_code[0m[2m=[0m"OK"[1m}[0m[2m:[0m [2mopentalk_controller_core::api::signaling::ws::actor[0m[2m:[0m Protocol error in websocket - exiting, I/O error *
+
+Caused by this error:
+  1: payload reached EOF before completing: None
+
+NOTE: Some redundant information has been removed from the lines marked with *. Set SNAFU_RAW_ERROR_MESSAGES=1 to disable this behavior.
+
+[2m2026-04-03T10:19:57.296414Z[0m [33m WARN[0m [1mHTTP request[0m[1m{[0m[3mhttp.method[0m[2m=[0mGET [3mhttp.route[0m[2m=[0m/signaling [3mhttp.flavor[0m[2m=[0mHTTP/1.1 [3mhttp.scheme[0m[2m=[0mhttp [3mhttp.host[0m[2m=[0mlocalhost:11311 [3mhttp.user_agent[0m[2m=[0mMozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0 [3mhttp.target[0m[2m=[0m/signaling [3motel.kind[0m[2m=[0m"server" [3mrequest_id[0m[2m=[0m7db46543-4dff-4dec-aec0-08b678f15953 [3mhttp.status_code[0m[2m=[0m101 [3motel.status_code[0m[2m=[0m"OK"[1m}[0m[2m:[0m [2mopentalk_controller_core::api::signaling::ws::actor[0m[2m:[0m Protocol error in websocket - exiting, I/O error *
+
+Caused by this error:
+  1: payload reached EOF before completing: None
+
+NOTE: Some redundant information has been removed from the lines marked with *. Set SNAFU_RAW_ERROR_MESSAGES=1 to disable this behavior.
+
+[2m2026-04-03T10:20:04.341106Z[0m [33m WARN[0m [1mHTTP request[0m[1m{[0m[3mhttp.method[0m[2m=[0mGET [3mhttp.route[0m[2m=[0m/signaling [3mhttp.flavor[0m[2m=[0mHTTP/1.1 [3mhttp.scheme[0m[2m=[0mhttp [3mhttp.host[0m[2m=[0mlocalhost:11311 [3mhttp.user_agent[0m[2m=[0mMozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 [3mhttp.target[0m[2m=[0m/signaling [3motel.kind[0m[2m=[0m"server" [3mrequest_id[0m[2m=[0mdf6c59ff-1f6c-4c0e-931c-9d69eb72a49d [3mhttp.status_code[0m[2m=[0m101 [3motel.status_code[0m[2m=[0m"OK"[1m}[0m[2m:[0m [2mopentalk_controller_core::api::signaling::ws::actor[0m[2m:[0m Protocol error in websocket - exiting, I/O error *
+
+Caused by this error:
+  1: payload reached EOF before completing: None
+
+NOTE: Some redundant information has been removed from the lines marked with *. Set SNAFU_RAW_ERROR_MESSAGES=1 to disable this behavior.
+
+[2m2026-04-03T10:45:13.311288Z[0m [33m WARN[0m [1mHTTP request[0m[1m{[0m[3mhttp.method[0m[2m=[0mGET [3mhttp.route[0m[2m=[0m/signaling [3mhttp.flavor[0m[2m=[0mHTTP/1.1 [3mhttp.scheme[0m[2m=[0mhttp [3mhttp.host[0m[2m=[0mlocalhost:11311 [3mhttp.user_agent[0m[2m=[0mMozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0 [3mhttp.target[0m[2m=[0m/signaling [3motel.kind[0m[2m=[0m"server" [3mrequest_id[0m[2m=[0m7498c568-8005-4da0-b2e3-de60572c10ad [3mhttp.status_code[0m[2m=[0m101 [3motel.status_code[0m[2m=[0m"OK"[1m}[0m[2m:[0m [2mopentalk_controller_core::api::signaling::ws::actor[0m[2m:[0m Protocol error in websocket - exiting, I/O error *
+
+Caused by this error:
+  1: payload reached EOF before completing: None
+
+NOTE: Some redundant information has been removed from the lines marked with *. Set SNAFU_RAW_ERROR_MESSAGES=1 to disable this behavior.
+
+[2m2026-04-03T10:57:31.517123Z[0m [33m WARN[0m [1mHTTP request[0m[1m{[0m[3mhttp.method[0m[2m=[0mGET [3mhttp.route[0m[2m=[0m/signaling [3mhttp.flavor[0m[2m=[0mHTTP/1.1 [3mhttp.scheme[0m[2m=[0mhttp [3mhttp.host[0m[2m=[0mlocalhost:11311 [3mhttp.user_agent[0m[2m=[0mMozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0 [3mhttp.target[0m[2m=[0m/signaling [3motel.kind[0m[2m=[0m"server" [3mrequest_id[0m[2m=[0m8dab8a37-b595-42a8-b2c1-5680d946348a [3mhttp.status_code[0m[2m=[0m101 [3motel.status_code[0m[2m=[0m"OK"[1m}[0m[2m:[0m [2mopentalk_controller_core::api::signaling::ws::actor[0m[2m:[0m Protocol error in websocket - exiting, I/O error *
+
+Caused by this error:
+  1: payload reached EOF before completing: None
+
+NOTE: Some redundant information has been removed from the lines marked with *. Set SNAFU_RAW_ERROR_MESSAGES=1 to disable this behavior.
+
+[2m2026-04-03T11:00:45.512976Z[0m [33m WARN[0m [1mHTTP request[0m[1m{[0m[3mhttp.method[0m[2m=[0mGET [3mhttp.route[0m[2m=[0m/signaling [3mhttp.flavor[0m[2m=[0mHTTP/1.1 [3mhttp.scheme[0m[2m=[0mhttp [3mhttp.host[0m[2m=[0mlocalhost:11311 [3mhttp.user_agent[0m[2m=[0mMozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0 [3mhttp.target[0m[2m=[0m/signaling [3motel.kind[0m[2m=[0m"server" [3mrequest_id[0m[2m=[0md0f24212-5909-45c4-a89a-7dea806996cb [3mhttp.status_code[0m[2m=[0m101 [3motel.status_code[0m[2m=[0m"OK"[1m}[0m[2m:[0m [2mopentalk_controller_core::api::signaling::ws::actor[0m[2m:[0m Protocol error in websocket - exiting, I/O error *
+
+Caused by this error:
+  1: payload reached EOF before completing: None
+
+NOTE: Some redundant information has been removed from the lines marked with *. Set SNAFU_RAW_ERROR_MESSAGES=1 to disable this behavior.
+
+[2m2026-04-03T11:19:44.222733Z[0m [33m WARN[0m [1mHTTP request[0m[1m{[0m[3mhttp.method[0m[2m=[0mGET [3mhttp.route[0m[2m=[0m/signaling [3mhttp.flavor[0m[2m=[0mHTTP/1.1 [3mhttp.scheme[0m[2m=[0mhttp [3mhttp.host[0m[2m=[0mlocalhost:11311 [3mhttp.user_agent[0m[2m=[0mMozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0 [3mhttp.target[0m[2m=[0m/signaling [3motel.kind[0m[2m=[0m"server" [3mrequest_id[0m[2m=[0m77ca3ced-e176-4e4f-b26a-5b93729cb042 [3mhttp.status_code[0m[2m=[0m101 [3motel.status_code[0m[2m=[0m"OK"[1m}[0m[2m:[0m [2mopentalk_controller_core::api::signaling::ws::actor[0m[2m:[0m Protocol error in websocket - exiting, I/O error *
+
+Caused by this error:
+  1: payload reached EOF before completing: None
+
+NOTE: Some redundant information has been removed from the lines marked with *. Set SNAFU_RAW_ERROR_MESSAGES=1 to disable this behavior.
+
+[2m2026-04-03T11:32:22.068746Z[0m [33m WARN[0m [1mHTTP request[0m[1m{[0m[3mhttp.method[0m[2m=[0mGET [3mhttp.route[0m[2m=[0m/signaling [3mhttp.flavor[0m[2m=[0mHTTP/1.1 [3mhttp.scheme[0m[2m=[0mhttp [3mhttp.host[0m[2m=[0mlocalhost:11311 [3mhttp.user_agent[0m[2m=[0mMozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0 [3mhttp.target[0m[2m=[0m/signaling [3motel.kind[0m[2m=[0m"server" [3mrequest_id[0m[2m=[0ma8ea7cce-fdb1-4d4a-91b7-dda299b9c609 [3mhttp.status_code[0m[2m=[0m101 [3motel.status_code[0m[2m=[0m"OK"[1m}[0m[2m:[0m [2mopentalk_controller_core::api::signaling::ws::actor[0m[2m:[0m Protocol error in websocket - exiting, I/O error *
+
+Caused by this error:
+  1: payload reached EOF before completing: None
+
+NOTE: Some redundant information has been removed from the lines marked with *. Set SNAFU_RAW_ERROR_MESSAGES=1 to disable this behavior.
+
+[2m2026-04-03T13:09:18.302321Z[0m [33m WARN[0m [1mHTTP request[0m[1m{[0m[3mhttp.method[0m[2m=[0mGET [3mhttp.route[0m[2m=[0m/signaling [3mhttp.flavor[0m[2m=[0mHTTP/1.1 [3mhttp.scheme[0m[2m=[0mhttp [3mhttp.host[0m[2m=[0mlocalhost:11311 [3mhttp.user_agent[0m[2m=[0mMozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0 [3mhttp.target[0m[2m=[0m/signaling [3motel.kind[0m[2m=[0m"server" [3mrequest_id[0m[2m=[0m54befb3a-7282-4586-a8da-e7175148fd7a [3mhttp.status_code[0m[2m=[0m101 [3motel.status_code[0m[2m=[0m"OK"[1m}[0m[2m:[0m [2mopentalk_controller_core::api::signaling::ws::actor[0m[2m:[0m Protocol error in websocket - exiting, I/O error *
+
+Caused by this error:
+  1: payload reached EOF before completing: None
+
+NOTE: Some redundant information has been removed from the lines marked with *. Set SNAFU_RAW_ERROR_MESSAGES=1 to disable this behavior.
+
+[2m2026-04-03T13:13:04.918145Z[0m [33m WARN[0m [1mHTTP request[0m[1m{[0m[3mhttp.method[0m[2m=[0mGET [3mhttp.route[0m[2m=[0m/signaling [3mhttp.flavor[0m[2m=[0mHTTP/1.1 [3mhttp.scheme[0m[2m=[0mhttp [3mhttp.host[0m[2m=[0mlocalhost:11311 [3mhttp.user_agent[0m[2m=[0mMozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0 [3mhttp.target[0m[2m=[0m/signaling [3motel.kind[0m[2m=[0m"server" [3mrequest_id[0m[2m=[0ma8de69ce-e087-42fd-9b34-289d4476f394 [3mhttp.status_code[0m[2m=[0m101 [3motel.status_code[0m[2m=[0m"OK"[1m}[0m[2m:[0m [2mopentalk_controller_core::api::signaling::ws::actor[0m[2m:[0m Protocol error in websocket - exiting, I/O error *
+
+Caused by this error:
+  1: payload reached EOF before completing: None
+
+NOTE: Some redundant information has been removed from the lines marked with *. Set SNAFU_RAW_ERROR_MESSAGES=1 to disable this behavior.
+
+[2m2026-04-03T13:13:13.670450Z[0m [33m WARN[0m [1mHTTP request[0m[1m{[0m[3mhttp.method[0m[2m=[0mGET [3mhttp.route[0m[2m=[0m/signaling [3mhttp.flavor[0m[2m=[0mHTTP/1.1 [3mhttp.scheme[0m[2m=[0mhttp [3mhttp.host[0m[2m=[0mlocalhost:11311 [3mhttp.user_agent[0m[2m=[0mMozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0 [3mhttp.target[0m[2m=[0m/signaling [3motel.kind[0m[2m=[0m"server" [3mrequest_id[0m[2m=[0m0b4ef7e0-705e-4b4e-aae2-d624722d43c2 [3mhttp.status_code[0m[2m=[0m101 [3motel.status_code[0m[2m=[0m"OK"[1m}[0m[2m:[0m [2mopentalk_controller_core::api::signaling::ws::actor[0m[2m:[0m Protocol error in websocket - exiting, I/O error *
+
+Caused by this error:
+  1: payload reached EOF before completing: None
+
+NOTE: Some redundant information has been removed from the lines marked with *. Set SNAFU_RAW_ERROR_MESSAGES=1 to disable this behavior.
+
+[2m2026-04-03T13:13:13.678443Z[0m [31mERROR[0m [1mdestroy[0m[1m{[0m[3mclose_ws[0m[2m=[0mtrue [3mgrace_period[0m[2m=[0mtrue [3mid[0m[2m=[0m7f091182-32de-43ea-9ee2-257a89df6e08[1m}[0m[2m:[0m [2mopentalk_controller_core::api::signaling::ws::runner[0m[2m:[0m Failed to close websocket, Mailbox has closed
+
+[2m2026-04-03T13:14:03.999492Z[0m [33m WARN[0m [1mHTTP request[0m[1m{[0m[3mhttp.method[0m[2m=[0mGET [3mhttp.route[0m[2m=[0m/signaling [3mhttp.flavor[0m[2m=[0mHTTP/1.1 [3mhttp.scheme[0m[2m=[0mhttp [3mhttp.host[0m[2m=[0mlocalhost:11311 [3mhttp.user_agent[0m[2m=[0mMozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0 [3mhttp.target[0m[2m=[0m/signaling [3motel.kind[0m[2m=[0m"server" [3mrequest_id[0m[2m=[0mab88fed1-d0ff-43dc-964e-e6c9c8a54598 [3mhttp.status_code[0m[2m=[0m101 [3motel.status_code[0m[2m=[0m"OK"[1m}[0m[2m:[0m [2mopentalk_controller_core::api::signaling::ws::actor[0m[2m:[0m Protocol error in websocket - exiting, I/O error *
+
+Caused by this error:
+  1: payload reached EOF before completing: None
+
+NOTE: Some redundant information has been removed from the lines marked with *. Set SNAFU_RAW_ERROR_MESSAGES=1 to disable this behavior.
+
+[2m2026-04-03T13:55:01.013145Z[0m [33m WARN[0m [1mHTTP request[0m[1m{[0m[3mhttp.method[0m[2m=[0mGET [3mhttp.route[0m[2m=[0m/signaling [3mhttp.flavor[0m[2m=[0mHTTP/1.1 [3mhttp.scheme[0m[2m=[0mhttp [3mhttp.host[0m[2m=[0mlocalhost:11311 [3mhttp.user_agent[0m[2m=[0mMozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0 [3mhttp.target[0m[2m=[0m/signaling [3motel.kind[0m[2m=[0m"server" [3mrequest_id[0m[2m=[0mac856374-32d7-40e2-921d-c483aea440f6 [3mhttp.status_code[0m[2m=[0m101 [3motel.status_code[0m[2m=[0m"OK"[1m}[0m[2m:[0m [2mopentalk_controller_core::api::signaling::ws::actor[0m[2m:[0m Protocol error in websocket - exiting, I/O error *
+
+Caused by this error:
+  1: payload reached EOF before completing: None
+
+NOTE: Some redundant information has been removed from the lines marked with *. Set SNAFU_RAW_ERROR_MESSAGES=1 to disable this behavior.
+
+Terminate batch job (Y/N)? 

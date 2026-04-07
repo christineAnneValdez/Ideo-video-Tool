@@ -1,0 +1,104 @@
+// SPDX-FileCopyrightText: OpenTalk GmbH <mail@opentalk.eu>
+//
+// SPDX-License-Identifier: EUPL-1.2
+import { render, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { format } from 'date-fns/format';
+
+import { formatBytes } from '../../../utils/numberUtils';
+import { mockedRoomAssets } from '../../../utils/testUtils';
+import { AssetTableRow } from './AssetTableRow';
+
+const mockHandleDownload = vi.fn();
+
+const mockHandleDelete = vi.fn();
+
+// checks all the text content inside a row
+const checkRowTextContent = (
+  row: HTMLElement,
+  isHeader: boolean,
+  name: string,
+  created: string,
+  size: string,
+  action?: string
+) => {
+  const columns = within(row).getAllByRole(isHeader ? 'columnheader' : 'cell');
+  expect(columns).toHaveLength(4);
+  expect(columns[0]).toHaveTextContent(name);
+  expect(columns[1]).toHaveTextContent(created);
+  expect(columns[2]).toHaveTextContent(size);
+  // asset rows have buttons inside, we will check them separately
+  if (action) {
+    expect(columns[3]).toHaveTextContent(action);
+  }
+};
+
+// checks specifically action buttons within an asset row
+const checkAssetActionButtons = (row: HTMLElement, deletable: boolean) => {
+  const cells = within(row).getAllByRole('cell');
+  const actionCell = cells[3];
+  const actionButtons = within(actionCell).getAllByRole('button');
+  const expectedButtonsNumber = deletable ? 2 : 1;
+  expect(actionButtons.length).toEqual(expectedButtonsNumber);
+};
+
+describe('AssetTableRow', () => {
+  const asset = mockedRoomAssets[0];
+  it('renders asset with both action buttons', async () => {
+    const deletable = true;
+    render(
+      <table>
+        <tbody>
+          <AssetTableRow asset={asset} handleDownload={mockHandleDownload} handleDelete={mockHandleDelete} />
+        </tbody>
+      </table>
+    );
+    const tableRow = screen.getByRole('row');
+
+    const isHeader = false;
+    checkRowTextContent(
+      tableRow,
+      isHeader,
+      asset.filename,
+      format(new Date(asset.createdAt), 'HH:mm dd.MM.yyyy'),
+      formatBytes(asset.size)
+    );
+    checkAssetActionButtons(tableRow, deletable);
+
+    // check download button
+    const downloadButton = within(tableRow).getByRole('button', { name: /action-download/i });
+    await userEvent.click(downloadButton);
+    expect(mockHandleDownload).toHaveBeenCalledExactlyOnceWith({
+      assetId: asset.id,
+    });
+
+    // check delete button
+    const deleteButton = within(tableRow).getByRole('button', { name: /action-delete/i });
+    await userEvent.click(deleteButton);
+    expect(mockHandleDelete).toHaveBeenCalledExactlyOnceWith(asset.id);
+  });
+
+  it('disables buttons from the parent', () => {
+    render(
+      <table>
+        <tbody>
+          <AssetTableRow
+            asset={asset}
+            handleDownload={mockHandleDownload}
+            handleDelete={mockHandleDelete}
+            progress={0}
+            disabledDelete
+            disabledDownload
+          />
+        </tbody>
+      </table>
+    );
+    const tableRow = screen.getByRole('row');
+
+    const downloadingButton = within(tableRow).getByRole('button', { name: /download-in-progress/i });
+    expect(downloadingButton).toBeDisabled();
+
+    const deleteButton = within(tableRow).getByRole('button', { name: /action-delete/i });
+    expect(deleteButton).toBeDisabled();
+  });
+});

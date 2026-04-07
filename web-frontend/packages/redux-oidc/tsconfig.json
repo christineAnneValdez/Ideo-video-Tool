@@ -1,0 +1,19 @@
+{
+	"extends": "../../tsconfig.base.json",
+	"compilerOptions": {
+		"jsx": "react-jsx",
+		"lib": [
+			"es6",
+			"dom.iterable",
+			"dom",
+			"esnext",
+			"es2021.intl",
+			"ES2020.String"
+		],
+		"declaration": true,
+		"composite": true,
+		"sourceMap": true,
+		"declarationMap": true
+	},
+	"exclude": ["node_modules", "dist"]
+}

@@ -1,0 +1,1192 @@
+// SPDX-FileCopyrightText: OpenTalk GmbH <mail@opentalk.eu>
+//
+// SPDX-License-Identifier: EUPL-1.2
+
+//! Extensible core library of the *OpentTalk Controller*
+
+use std::{
+    fs::File,
+    io::BufReader,
+    net::{Ipv4Addr, Ipv6Addr, SocketAddr, TcpListener, ToSocketAddrs as _},
+    path::{Path, PathBuf},
+    sync::Arc,
+    time::Duration,
+};
+
+use actix_cors::Cors;
+use actix_web::{App, HttpServer, Scope, web, web::Data};
+use api::signaling::SignalingModules;
+use kustos::Authz;
+use lapin_pool::RabbitMqPool;
+use opentalk_controller_api_actix_web::{v1, well_known};
+use opentalk_controller_service::{
+    ControllerBackend, Whatever,
+    oidc::{Cache, OidcTokenHandler, build_oidc_token_handler},
+    services::MailService,
+};
+use opentalk_controller_service_facade::OpenTalkControllerService;
+use opentalk_controller_settings::{
+    HttpTls, Monitoring, Settings, SettingsProvider, UserSearchBackend, UserSearchBackendKeycloak,
+    common::{HttpCorsAllowedOrigin, HttpCorsAllowedOrigins},
+};
+use opentalk_database::Db;
+use opentalk_inventory::InventoryProvider;
+use opentalk_inventory_database::DatabaseConnectionPool;
+use opentalk_jobs::job_runner::JobRunner;
+use opentalk_keycloak_admin::{AuthorizedClient, KeycloakAdminClient};
+use opentalk_roomserver_client::Client as RoomServerClient;
+use opentalk_service_auth::service::ApiKeyAuthorization;
+use opentalk_signaling_core::{
+    ExchangeHandle, ExchangeTask, ModulesRegistrar, ObjectStorage, RedisConnection,
+    RegisterModules, SignalingModule, SignalingModuleInitData, VolatileStaticMemoryStorage,
+    VolatileStorage,
+};
+use opentalk_types_api_v1::{auth::OidcProvider, error::ApiError};
+use rustls_pki_types::{CertificateDer, PrivatePkcs8KeyDer};
+use service_probe::{ServiceState, set_service_state, start_probe};
+use snafu::{Report, ResultExt, Snafu};
+use swagger::WithSwagger as _;
+use tokio::{signal::ctrl_c, sync::broadcast, task::JoinError, time::sleep};
+#[cfg(unix)]
+use tokio::signal::unix::{SignalKind, signal};
+use tracing_actix_web::TracingLogger;
+
+use crate::{
+    acl::check_or_create_kustos_default_permissions,
+    api::{
+        signaling::SignalingProtocols,
+        v1::{middleware::metrics::RequestMetrics, response::error::json_error_handler},
+    },
+    trace::ReducedSpanBuilder,
+};
+
+mod metrics;
+mod swagger;
+mod trace;
+
+pub mod acl;
+pub mod api;
+
+#[derive(Debug, Snafu)]
+/// Blocking thread has panicked
+pub struct BlockingError {
+    source: JoinError,
+}
+
+impl From<BlockingError> for ApiError {
+    fn from(e: BlockingError) -> Self {
+        log::error!(
+            "REST API threw internal error from blocking error: {}",
+            Report::from_error(e)
+        );
+        Self::internal()
+    }
+}
+
+type Result<T, E = Whatever> = std::result::Result<T, E>;
+
+/// Custom version of `actix_web::web::block` which retains the current tracing span
+pub async fn block<F, R>(f: F) -> Result<R, BlockingError>
+where
+    F: FnOnce() -> R + Send + 'static,
+    R: Send + 'static,
+{
+    let span = tracing::Span::current();
+
+    let fut = actix_rt::task::spawn_blocking(move || span.in_scope(f));
+
+    fut.await.context(BlockingSnafu)
+}
+
+/// Controller struct representation containing all fields required to extend and drive the controller
+pub struct Controller {
+    pub service: Arc<dyn OpenTalkControllerService>,
+
+    /// Settings loaded on [Controller::create]
+    pub startup_settings: Arc<Settings>,
+
+    /// Cloneable shared settings, can be used to reload settings from, when receiving the `reload` signal.
+    pub settings_provider: SettingsProvider,
+
+    /// Path of the configuration file
+    optional_config_path: Option<PathBuf>,
+
+    inventory_provider: Arc<dyn InventoryProvider>,
+
+    oidc_cache: Arc<Cache>,
+
+    storage: Arc<ObjectStorage>,
+
+    oidc: Arc<dyn OidcTokenHandler>,
+
+    user_search_client: Arc<Option<KeycloakAdminClient>>,
+
+    authz: Authz,
+
+    /// RabbitMQ connection pool, can be used to create connections and channels
+    pub rabbitmq_pool: Arc<Option<Arc<RabbitMqPool>>>,
+
+    /// Handle to the internal message exchange
+    pub exchange_handle: ExchangeHandle,
+
+    /// Cloneable volatile storage
+    pub volatile: VolatileStorage,
+
+    /// Reload signal which can be triggered by a user.
+    /// When received a module should try to re-read it's config and act accordingly.
+    ///
+    /// `controller.reload.subscribe()` to receive a receiver to the reload-signal.
+    pub reload: broadcast::Sender<()>,
+
+    /// Shutdown signal which is triggered when the controller is exiting, either because a fatal error occurred
+    /// or a user requested the shutdown.
+    ///
+    /// `controller.shutdown.subscribe()` to receive a receiver to the reload-signal.
+    /// The controller will wait up 10 seconds before forcefully shutting down.
+    /// It is tracking the shutdown progress by counting the shutdown-receiver count.
+    pub shutdown: broadcast::Sender<()>,
+
+    /// List of signaling modules registered to the controller.
+    ///
+    /// Can and should be used to extend the controllers signaling endpoint's capabilities.
+    pub signaling_modules: SignalingModules,
+
+    /// All metrics of the Application
+    pub metrics: metrics::CombinedMetrics,
+}
+
+impl Controller {
+    /// Creates a controller instance based on the optional config path command-line argument.
+    pub async fn create<M: RegisterModules>(optional_config_path: Option<PathBuf>) -> Result<Self> {
+        let settings_provider = load_settings_provider(optional_config_path.as_deref())?;
+
+        log::info!("Starting OpenTalk Controller");
+
+        log::info!(
+            "Global timezone is {}",
+            settings_provider.get().defaults.timezone
+        );
+
+        let controller = Self::init::<M>(settings_provider, optional_config_path)
+            .await
+            .whatever_context("Failed to init controller")?;
+
+        Ok(controller)
+    }
+
+    #[tracing::instrument(err, skip(settings_provider))]
+    async fn init<M: RegisterModules>(
+        settings_provider: SettingsProvider,
+        optional_config_path: Option<PathBuf>,
+    ) -> Result<Self> {
+        let settings = settings_provider.get();
+        let metrics = metrics::CombinedMetrics::try_init()
+            .whatever_context("Failed to initialize metrics")?;
+
+        opentalk_db_storage::migrations::migrate_from_url(&settings.database.url)
+            .await
+            .whatever_context("Failed to migrate database")?;
+
+        let rabbitmq_pool = Arc::new(settings.rabbit_mq.as_ref().map(|config| {
+            RabbitMqPool::from_config(
+                &config.url,
+                config.min_connections,
+                config.max_channels_per_connection,
+            )
+        }));
+
+        // Only use rabbitmq in the exchange when a both rabbitmq and redis are configured.
+        // This assumes that the existence of redis means multiple controllers are used
+        // and share their signaling state via redis. Only in this case rabbitmq is required
+        // in the exchange.
+        let exchange_handle = match (settings.redis.is_some(), rabbitmq_pool.as_ref()) {
+            (true, Some(rabbitmq_pool)) => ExchangeTask::spawn_with_rabbitmq(rabbitmq_pool.clone())
+                .await
+                .whatever_context("Failed to spawn exchange task")?,
+            _ => ExchangeTask::spawn()
+                .await
+                .whatever_context("Failed to spawn exchange task")?,
+        };
+
+        // Connect to postgres
+        let mut db =
+            Db::connect(&settings.database).whatever_context("Failed to connect to database")?;
+        db.set_metrics(metrics.database.clone());
+        let db = Arc::new(db);
+
+        // Connect to MinIO
+        let storage = Arc::new(
+            ObjectStorage::new(&settings.minio)
+                .await
+                .whatever_context("Failed to initialize object storage")?,
+        );
+
+        let oidc_frontend = &settings.oidc.frontend;
+        let oidc_controller = &settings.oidc.controller;
+
+        // Discover OIDC Provider
+        let oidc = build_oidc_token_handler(
+            oidc_frontend.authority.clone(),
+            oidc_controller.authority.clone(),
+            oidc_controller.client_id.clone(),
+            oidc_controller.client_secret.clone(),
+        )
+        .await
+        .whatever_context("Failed to initialize OIDC Context")?;
+
+        let user_search_client =
+            if let Some(UserSearchBackend::Keycloak(UserSearchBackendKeycloak {
+                api_base_url,
+                client_id,
+                client_secret,
+                external_id_user_attribute_name: _,
+            })) = &settings.user_search_backend
+            {
+                let authorized_client = AuthorizedClient::new(
+                    oidc_controller.authority.clone(),
+                    client_id.clone().into(),
+                    client_secret.secret().clone(),
+                )
+                .whatever_context("Failed to initialize authorized client")?;
+
+                Arc::new(Some(
+                    KeycloakAdminClient::new(api_base_url.clone(), authorized_client)
+                        .whatever_context("Failed to initialize keycloak")?,
+                ))
+            } else {
+                Arc::new(None)
+            };
+
+        // Build redis client. Does not check if redis is reachable.
+        let redis = settings
+            .redis
+            .as_ref()
+            .map(|r| redis::Client::open(r.url.clone()))
+            .transpose()
+            .whatever_context("Invalid redis url")?;
+        let redis_conn = match redis {
+            Some(c) => Some(
+                redis::aio::ConnectionManager::new(c)
+                    .await
+                    .whatever_context("Failed to create redis connection manager")?,
+            ),
+            None => None,
+        };
+        let redis_conn =
+            redis_conn.map(|c| RedisConnection::new(c).with_metrics(metrics.redis.clone()));
+        let oidc_cache = Arc::new(Cache::create(redis_conn.clone()));
+        let volatile = match redis_conn {
+            Some(redis) => VolatileStorage::Right(redis),
+            None => VolatileStorage::Left(VolatileStaticMemoryStorage),
+        };
+
+        let (shutdown, _) = broadcast::channel::<()>(1);
+        let (reload, _) = broadcast::channel::<()>(4);
+
+        let inventory_provider = Arc::new(DatabaseConnectionPool::new(db));
+        let authz = match (
+            settings.authz.synchronize_controllers,
+            rabbitmq_pool.as_ref(),
+        ) {
+            (true, Some(rabbitmq_pool)) => kustos::Authz::new_with_autoload_and_metrics(
+                inventory_provider.clone(),
+                rabbitmq_pool.clone(),
+                metrics.kustos.clone(),
+            )
+            .await
+            .whatever_context("Failed to initialize kustos/authz")?,
+            _ => kustos::Authz::new(inventory_provider.clone())
+                .await
+                .whatever_context("Failed to initialize kustos/authz")?,
+        };
+        let inventory_provider: Arc<dyn InventoryProvider> = inventory_provider;
+
+        let mail_service = Arc::new(match rabbitmq_pool.as_ref() {
+            Some(rabbitmq_pool) => Some(MailService::new(
+                metrics.endpoint.clone(),
+                rabbitmq_pool.clone(),
+                rabbitmq_pool
+                    .create_channel()
+                    .await
+                    .whatever_context("Failed to create rabbitmq channel")?,
+            )),
+            None => None,
+        });
+
+        let mut initializer = ModuleInitializer {
+            init_data: SignalingModuleInitData {
+                startup_settings: settings.clone(),
+                settings_provider: settings_provider.clone(),
+                rabbitmq_pool: rabbitmq_pool.clone(),
+                volatile: volatile.clone(),
+                shutdown: shutdown.clone(),
+                reload: reload.clone(),
+            },
+            signaling_modules: SignalingModules::default(),
+        };
+
+        M::register(&mut initializer).whatever_context("Failed to register modules")?;
+
+        let roomserver_client = settings.roomserver.as_ref().map(|roomserver_config| {
+            RoomServerClient::new(
+                roomserver_config.url.clone(),
+                roomserver_config.api_key.clone(),
+            )
+        });
+
+        let backend = {
+            let oidc_provider = OidcProvider {
+                name: oidc_frontend.client_id.to_string(),
+                url: oidc_frontend.authority.to_string(),
+            };
+
+            ControllerBackend::new(
+                settings_provider.clone(),
+                authz.clone(),
+                inventory_provider.clone(),
+                oidc_cache.clone(),
+                oidc.clone(),
+                oidc_provider,
+                storage.clone(),
+                volatile.clone(),
+                exchange_handle.clone(),
+                mail_service.clone(),
+                user_search_client.clone(),
+                initializer.signaling_modules.get_module_features(),
+                roomserver_client,
+            )
+        };
+
+        let service = Arc::new(backend);
+
+        let controller = Self {
+            service,
+            startup_settings: settings,
+            settings_provider,
+            optional_config_path,
+            inventory_provider,
+            oidc_cache,
+            storage,
+            oidc,
+            user_search_client,
+            authz,
+            rabbitmq_pool,
+            exchange_handle,
+            volatile,
+            shutdown,
+            reload,
+            signaling_modules: initializer.signaling_modules,
+            metrics,
+        };
+
+        Ok(controller)
+    }
+
+    /// Runs the controller until a fatal error occurred or a shutdown is requested (e.g. SIGTERM).
+    pub async fn run(self) -> Result<()> {
+        let signaling_modules = Arc::new(self.signaling_modules);
+
+        if let Some(Monitoring { port, addr }) = self.startup_settings.monitoring {
+            start_probe(addr, port, ServiceState::Up)
+                .await
+                .whatever_context("Failed to start monitoring")?;
+        }
+
+        // Start JobExecutor
+        JobRunner::start(
+            self.inventory_provider.clone(),
+            self.authz.clone(),
+            self.shutdown.subscribe(),
+            self.startup_settings.clone(),
+            self.exchange_handle.clone(),
+        )
+        .await
+        .whatever_context("Failed to start Job Runner")?;
+
+        // Start HTTP Server
+        let http_server = {
+            let settings_provider = self.settings_provider.clone();
+            let volatile = self.volatile.clone();
+            let exchange_handle = Data::new(self.exchange_handle);
+            let signaling_modules = Arc::downgrade(&signaling_modules);
+            let signaling_metrics = Data::from(self.metrics.signaling.clone());
+            let storage = Arc::downgrade(&self.storage);
+            let inventory_provider = Arc::downgrade(&self.inventory_provider);
+            let http_client = Data::new(reqwest::Client::new());
+
+            let oidc_ctx = Arc::downgrade(&self.oidc);
+            let shutdown = self.shutdown.clone();
+
+            let user_search_client = Data::from(self.user_search_client);
+
+            log::info!("Making sure the default permissions are set");
+            check_or_create_kustos_default_permissions(&self.authz)
+                .await
+                .whatever_context("Failed to create default permissions")?;
+
+            let authz_middleware = self.authz.actix_web_middleware(true).await;
+
+            let metrics = Data::new(self.metrics);
+
+            let caches = Data::from(self.oidc_cache.clone());
+            let service = Data::from(self.service);
+
+            let service_auth_middleware = settings_provider
+                .get()
+                .http
+                .service_api_keys
+                .clone()
+                .map(|keys| keys.auth_middleware())
+                .transpose()
+                .whatever_context("Failed to build service auth middleware")?;
+
+            HttpServer::new(move || {
+                let cors = setup_cors(settings_provider.clone());
+
+                // Unwraps cannot panic. Server gets stopped before dropping the Arc.
+                let inventory_provider = Data::from(inventory_provider.upgrade().unwrap());
+                let storage = Data::from(storage.upgrade().unwrap());
+
+                let oidc_ctx = Data::from(oidc_ctx.upgrade().unwrap());
+                let authz = Data::new(self.authz.clone());
+                let volatile = Data::new(volatile.clone());
+
+                let acl = authz_middleware.clone();
+                let service_auth_middleware = service_auth_middleware.clone();
+
+                let signaling_modules = Data::from(signaling_modules.upgrade().unwrap());
+                let swagger_service_enabled = !settings_provider.get().endpoints.disable_openapi;
+
+                App::new()
+                    .wrap(RequestMetrics::new(metrics.endpoint.clone()))
+                    .wrap(cors)
+                    .wrap(TracingLogger::<ReducedSpanBuilder>::new())
+                    .wrap(api::v1::middleware::headers::Headers {})
+                    .app_data(service.clone())
+                    .app_data(caches.clone())
+                    .app_data(web::JsonConfig::default().error_handler(json_error_handler))
+                    .app_data(Data::new(settings_provider.clone()))
+                    .app_data(inventory_provider.clone())
+                    .app_data(storage)
+                    .app_data(oidc_ctx.clone())
+                    .app_data(user_search_client.clone())
+                    .app_data(authz.clone())
+                    .app_data(volatile)
+                    .app_data(Data::new(shutdown.clone()))
+                    .app_data(exchange_handle.clone())
+                    .app_data(signaling_modules)
+                    .app_data(SignalingProtocols::data())
+                    .app_data(signaling_metrics.clone())
+                    .app_data(metrics.clone())
+                    .app_data(http_client.clone())
+                    .service(well_known::opentalk::api::get)
+                    .service(api::signaling::ws_service)
+                    .service(metrics::metrics)
+                    .with_swagger_service_if(swagger_service_enabled)
+                    .service(
+                        web::scope("livekit")
+                            .service(api::livekit_proxy::proxy_validate)
+                            .service(api::livekit_proxy::proxy_signaling),
+                    )
+                    .service(internal_service_scope(service_auth_middleware))
+                    .service(v1_scope(
+                        settings_provider.clone(),
+                        authz,
+                        inventory_provider.clone(),
+                        oidc_ctx.clone(),
+                        acl,
+                    ))
+            })
+        };
+
+        let socket_address = determine_socket_address(
+            self.startup_settings.http.addr.as_deref(),
+            self.startup_settings.http.port,
+        )
+        .whatever_context("Unable to determine bind address")?;
+
+        let http_server = if let Some(tls) = &self.startup_settings.http.tls {
+            let config = setup_rustls(tls).whatever_context("Failed to setup TLS context")?;
+
+            http_server.bind_rustls_0_23(&socket_address[..], config)
+        } else {
+            http_server.bind(&socket_address[..])
+        };
+
+        let http_server = http_server.with_whatever_context(|_| {
+            format!("Failed to bind http server to {socket_address:?}")
+        })?;
+
+        set_service_state(ServiceState::Ready);
+        log::info!("Startup finished");
+
+        let http_server = http_server.disable_signals().run();
+        let http_server_handle = http_server.handle();
+
+        #[cfg(unix)]
+        let mut reload_signal = signal(SignalKind::hangup())
+            .whatever_context("Failed to register SIGHUP signal handler")?;
+
+        actix_rt::spawn(http_server);
+
+        #[cfg(unix)]
+        {
+            // Wait for either SIGTERM or SIGHUP and handle them accordingly
+            loop {
+                tokio::select! {
+                    _ = ctrl_c() => {
+                        log::info!("Got termination signal, exiting");
+                        break;
+                    }
+                    _ = reload_signal.recv() => {
+                        log::info!("Got reload signal, reloading");
+
+                        if let Err(e) = self.settings_provider.reload_from_path_or_standard_paths(self.optional_config_path.as_deref()) {
+                            log::error!("Failed to reload settings, {}", Report::from_error(e));
+                            continue
+                        }
+
+                        // discard result, might fail if no one is subscribed
+                        let _ = self.reload.send(());
+                    }
+                }
+            }
+        }
+
+        #[cfg(not(unix))]
+        {
+            ctrl_c()
+                .await
+                .whatever_context("Failed to wait for CTRL-C shutdown signal")?;
+            log::info!("Got termination signal, exiting");
+        }
+
+        // ==== Begin shutdown sequence ====
+
+        // Send shutdown signals to all tasks within our application
+        let _ = self.shutdown.send(());
+
+        // then stop HTTP server
+        http_server_handle.stop(true).await;
+
+        // Check in a 1 second interval for 10 seconds if all tasks have exited
+        // by inspecting the receiver count of the broadcast-channel
+        for _ in 0..10 {
+            let receiver_count = self.shutdown.receiver_count();
+
+            if receiver_count > 0 {
+                log::debug!("Waiting for {receiver_count} tasks to be stopped");
+                sleep(Duration::from_secs(1)).await;
+            }
+        }
+
+        // Drop signaling modules to drop any data contained in the module builders.
+        drop(signaling_modules);
+
+        if let Some(rabbitmq_pool) = self.rabbitmq_pool.as_ref() {
+            // Close all rabbitmq connections
+            // TODO what code and text to use here
+            if let Err(e) = rabbitmq_pool.close(0, "shutting down").await {
+                log::error!(
+                    "Failed to close RabbitMQ connections, {}",
+                    Report::from_error(e)
+                );
+            }
+        }
+
+        if self.shutdown.receiver_count() > 0 {
+            log::error!("Not all tasks stopped. Exiting anyway");
+        } else {
+            log::info!("All tasks stopped, goodbye!");
+        }
+
+        Ok(())
+    }
+}
+
+impl ModulesRegistrar for Controller {
+    type Error = Whatever;
+
+    fn register<M: SignalingModule>(&mut self) -> Result<()> {
+        let init = SignalingModuleInitData {
+            startup_settings: self.startup_settings.clone(),
+            settings_provider: self.settings_provider.clone(),
+            rabbitmq_pool: self.rabbitmq_pool.clone(),
+            shutdown: self.shutdown.clone(),
+            reload: self.reload.clone(),
+            volatile: self.volatile.clone(),
+        };
+
+        let params = M::build_params(init)
+            .with_whatever_context(|_| format!("Failed to initialize module '{}'", M::NAMESPACE))?;
+
+        if let Some(params) = params {
+            self.signaling_modules.add_module::<M>(params);
+        } else {
+            log::info!(
+                "Skipping module '{}' due to missing configuration",
+                M::NAMESPACE
+            );
+        }
+
+        Ok(())
+    }
+}
+
+#[derive(utoipa::OpenApi)]
+#[openapi(
+    info(
+        title = "OpenTalk Controller Frontend API",
+        description = "Specifies the endpoints and structure of the OpenTalk Controller Frontend API",
+    ),
+    tags(
+        (
+            name = "api::v1::auth",
+            description = "Endpoints related to authentication"
+        ),
+        (
+            name = "api::v1::invites",
+            description = "Endpoints related to meeting invites"
+        ),
+        (
+            name = "api::v1::rooms",
+            description = "Endpoints related to meeting rooms"
+        ),
+        (
+            name = "api::v1::events",
+            description = "Endpoints related to events"
+        ),
+        (
+            name = "api::v1::events::favorites",
+            description = "Endpoints related to user's favorite events"
+        ),
+        (
+            name = "api::v1::events::instances",
+            description = "Endpoints related to event instances"
+        ),
+        (
+            name = "api::v1::events::invites",
+            description = "Endpoints related to event invites"
+        ),
+        (
+            name = "api::v1::events::shared_folder",
+            description = "Endpoints related to event shared folders"
+        ),
+        (
+            name = "api::v1::assets",
+            description = "Endpoints related to file assets"
+        ),
+        (
+            name = "api::v1::sip_configs",
+            description = "Endpoints related to SIP configuration"
+        ),
+        (
+            name = "api::v1::services::call_in",
+            description = "Endpoints related to the meeting call-in service"
+        ),
+        (
+            name = "api::v1::services::recording",
+            description = "Endpoints related to the meeting recording service"
+        ),
+        (
+            name = "api::v1::streaming_targets",
+            description = "Endpoints related to streaming targets"
+        ),
+        (
+            name = "api::v1::turn",
+            description = "Endpoints related TURN server usage"
+        ),
+        (
+            name = "api::v1::users",
+            description = "Endpoints related to user information and management"
+        ),
+        (
+            name = "api::signaling",
+            description = "Endpoints for signaling connections in a meeting"
+        ),
+    ),
+    paths(
+        api::signaling::ws_service,
+        v1::rooms::by_id::assets::by_id::get,
+        v1::rooms::by_id::assets::by_id::download::get,
+        v1::rooms::by_id::assets::get,
+        v1::rooms::by_id::assets::post,
+        v1::rooms::by_id::assets::by_id::delete,
+        v1::auth::login::get,
+        v1::auth::login::post,
+        v1::auth::logout::post,
+        v1::events::by_id::delete,
+        v1::users::me::event_favorites::by_id::put,
+        v1::users::me::event_favorites::by_id::delete,
+        v1::events::by_id::get,
+        v1::events::get,
+        v1::events::by_id::instances::by_id::get,
+        v1::events::by_id::instances::get,
+        v1::events::instances::get,
+        v1::events::by_id::instances::by_id::patch,
+        v1::events::by_id::invite::patch,
+        v1::events::by_id::invites::post,
+        v1::events::by_id::invite::delete,
+        v1::events::by_id::invites::email::delete,
+        v1::events::by_id::invites::by_id::delete,
+        v1::users::me::pending_invites::get,
+        v1::events::by_id::invites::get,
+        v1::events::by_id::invites::email::patch,
+        v1::events::by_id::invites::by_id::patch,
+        v1::events::post,
+        v1::events::by_id::patch,
+        v1::events::by_id::shared_folder::get,
+        v1::events::by_id::shared_folder::put,
+        v1::events::by_id::shared_folder::delete,
+        v1::rooms::by_id::invites::post,
+        v1::rooms::by_id::invites::by_code::delete,
+        v1::rooms::by_id::invites::by_code::get,
+        v1::rooms::by_id::invites::get,
+        v1::rooms::by_id::invites::by_code::put,
+        v1::invite::verify::post,
+        v1::rooms::get,
+        v1::rooms::by_id::delete,
+        v1::rooms::by_id::get,
+        v1::rooms::by_id::event::get,
+        v1::rooms::by_id::tariff::get,
+        v1::rooms::post,
+        v1::rooms::by_id::patch,
+        v1::rooms::by_id::start::post,
+        v1::rooms::by_id::start_invited::post,
+        v1::services::call_in::start::post,
+        api::v1::services::recording::get_recording_upload,
+        api::v1::services::recording::post_recording_start,
+        api::internal::assets::post_asset,
+        v1::rooms::by_id::sip::delete,
+        v1::rooms::by_id::sip::get,
+        v1::rooms::by_id::sip::put,
+        v1::rooms::by_id::streaming_targets::by_id::delete,
+        v1::rooms::by_id::streaming_targets::by_id::get,
+        v1::rooms::by_id::streaming_targets::get,
+        v1::rooms::by_id::streaming_targets::by_id::patch,
+        v1::rooms::by_id::streaming_targets::post,
+        v1::turn::get,
+        v1::users::find::get,
+        v1::users::me::get,
+        v1::users::me::assets::get,
+        v1::users::me::tariff::get,
+        v1::users::by_id::get,
+        v1::users::me::patch,
+    ),
+    components(
+        schemas(
+            v1::response::headers::CursorLink,
+            v1::response::headers::PageLink,
+            opentalk_types_api_v1::error::ErrorBody,
+            opentalk_types_api_v1::error::ValidationErrorEntry,
+            opentalk_types_api_v1::pagination::Cursor::<opentalk_types_api_v1::events::GetEventInstancesCursorData>,
+            opentalk_types_api_v1::pagination::Cursor::<opentalk_types_api_v1::events::GetEventsCursorData>,
+            opentalk_types_api_v1::pagination::Cursor::<opentalk_types_api_v1::events::GetEventsAndInstancesCursorData>,
+            opentalk_types_api_v1::assets::AssetResource,
+            opentalk_types_api_v1::assets::AssetSortingQuery,
+            opentalk_types_api_v1::auth::GetLoginResponseBody,
+            opentalk_types_api_v1::auth::OidcProvider,
+            opentalk_types_api_v1::auth::PostLoginResponseBody,
+            opentalk_types_api_v1::auth::login::AuthLoginPostRequestBody,
+            opentalk_types_api_v1::auth::PostLogoutRequestBody,
+            opentalk_types_api_v1::events::CallInInfo,
+            opentalk_types_api_v1::events::DeleteEmailInviteBody,
+            opentalk_types_api_v1::events::EmailInvite,
+            opentalk_types_api_v1::rooms::by_room_id::assets::RoomsByRoomIdAssetsGetResponseBody,
+            opentalk_types_api_v1::events::EmailOnlyUser,
+            opentalk_types_api_v1::events::EventAndInstanceId,
+            opentalk_types_api_v1::events::EventExceptionResource,
+            opentalk_types_api_v1::events::EventInstance,
+            opentalk_types_api_v1::events::EventInvitee,
+            opentalk_types_api_v1::events::EventInviteeProfile,
+            opentalk_types_api_v1::events::EventOrException,
+            opentalk_types_api_v1::events::EventResource,
+            opentalk_types_api_v1::events::EventRoomInfo,
+            opentalk_types_api_v1::events::EventStatus,
+            opentalk_types_api_v1::events::EventType,
+            opentalk_types_api_v1::events::GetEventInstanceResponseBody,
+            opentalk_types_api_v1::events::GetEventInstancesResponseBody,
+            opentalk_types_api_v1::events::InstanceId,
+            opentalk_types_api_v1::events::PatchEmailInviteBody,
+            opentalk_types_api_v1::events::PatchEventBody,
+            opentalk_types_api_v1::events::PatchEventInstanceBody,
+            opentalk_types_api_v1::events::PatchInviteBody,
+            opentalk_types_api_v1::events::PostEventInviteBody,
+            opentalk_types_api_v1::events::PostEventsBody,
+            opentalk_types_api_v1::events::PublicInviteUserProfile,
+            opentalk_types_api_v1::events::UserInvite,
+            opentalk_types_api_v1::rooms::GetRoomsResponseBody,
+            opentalk_types_api_v1::rooms::PostRoomsRequestBody,
+            opentalk_types_api_v1::rooms::RoomResource,
+            opentalk_types_api_v1::rooms::by_room_id::PatchRoomsRequestBody,
+            opentalk_types_api_v1::rooms::by_room_id::PostRoomsStartInvitedRequestBody,
+            opentalk_types_api_v1::rooms::by_room_id::PostRoomsStartRequestBody,
+            opentalk_types_api_v1::rooms::by_room_id::RoomsStartResponseBody,
+            opentalk_types_api_v1::rooms::by_room_id::invites::GetRoomsInvitesResponseBody,
+            opentalk_types_api_v1::rooms::by_room_id::invites::InviteResource,
+            opentalk_types_api_v1::rooms::by_room_id::invites::PostInviteRequestBody,
+            opentalk_types_api_v1::rooms::by_room_id::invites::PostInviteVerifyRequestBody,
+            opentalk_types_api_v1::rooms::by_room_id::invites::PostInviteVerifyResponseBody,
+            opentalk_types_api_v1::rooms::by_room_id::invites::PutInviteRequestBody,
+            opentalk_types_api_v1::rooms::by_room_id::sip::PutSipConfigRequestBody,
+            opentalk_types_api_v1::rooms::by_room_id::sip::SipConfigResource,
+            opentalk_types_api_v1::rooms::by_room_id::streaming_targets::GetRoomStreamingTargetResponseBody,
+            opentalk_types_api_v1::rooms::by_room_id::streaming_targets::GetRoomStreamingTargetsResponseBody,
+            opentalk_types_api_v1::rooms::by_room_id::streaming_targets::PatchRoomStreamingTargetRequestBody,
+            opentalk_types_api_v1::rooms::by_room_id::streaming_targets::PatchRoomStreamingTargetResponseBody,
+            opentalk_types_api_v1::rooms::by_room_id::streaming_targets::PostRoomStreamingTargetRequestBody,
+            opentalk_types_api_v1::rooms::by_room_id::streaming_targets::PostRoomStreamingTargetResponseBody,
+            opentalk_types_api_v1::rooms::streaming_targets::UpdateStreamingTargetKind,
+            opentalk_types_api_v1::services::PostServiceStartResponseBody,
+            opentalk_types_api_v1::services::call_in::PostCallInStartRequestBody,
+            opentalk_types_api_v1::services::recording::PostRecordingStartRequestBody,
+            opentalk_types_api_v1::users::GetEventInvitesPendingResponseBody,
+            opentalk_types_api_v1::users::GetFindResponseBody,
+            opentalk_types_api_v1::users::GetFindResponseEntry,
+            opentalk_types_api_v1::users::GetUserAssetsResponseBody,
+            opentalk_types_api_v1::users::PrivateUserProfile,
+            opentalk_types_api_v1::users::PublicUserProfile,
+            opentalk_types_api_v1::users::UnregisteredUser,
+            opentalk_types_api_v1::users::UserAssetResource,
+            opentalk_types_api_v1::users::me::PatchMeRequestBody,
+            opentalk_types_common::assets::AssetId,
+            opentalk_types_common::assets::AssetFileKind,
+            opentalk_types_common::assets::AssetSorting,
+            opentalk_types_common::assets::FileExtension,
+            opentalk_types_common::auth::ResumptionToken,
+            opentalk_types_common::auth::TicketToken,
+            opentalk_types_common::call_in::CallInId,
+            opentalk_types_common::call_in::CallInInfo,
+            opentalk_types_common::call_in::CallInPassword,
+            opentalk_types_common::call_in::NumericId,
+            opentalk_types_common::email::EmailAddress,
+            opentalk_types_common::events::EventDescription,
+            opentalk_types_common::events::EventId,
+            opentalk_types_common::events::EventInfo,
+            opentalk_types_common::events::EventTitle,
+            opentalk_types_common::events::MeetingDetails,
+            opentalk_types_common::events::invites::EmailInviteRole,
+            opentalk_types_common::events::invites::EventInviteStatus,
+            opentalk_types_common::events::invites::InviteRole,
+            opentalk_types_common::features::FeatureId,
+            opentalk_types_common::modules::ModuleId,
+            opentalk_types_common::order::Ordering,
+            opentalk_types_common::rooms::BreakoutRoomId,
+            opentalk_types_common::rooms::RoomId,
+            opentalk_types_common::rooms::RoomPassword,
+            opentalk_types_common::rooms::invite_codes::InviteCode,
+            opentalk_types_common::shared_folders::SharedFolder,
+            opentalk_types_common::shared_folders::SharedFolderAccess,
+            opentalk_types_common::streaming::RoomStreamingTarget,
+            opentalk_types_common::streaming::RoomStreamingTargetResource,
+            opentalk_types_common::streaming::StreamingKey,
+            opentalk_types_common::streaming::StreamingLink,
+            opentalk_types_common::streaming::StreamingTarget,
+            opentalk_types_common::streaming::StreamingTargetResource,
+            opentalk_types_common::streaming::StreamingTargetId,
+            opentalk_types_common::streaming::StreamingTargetKind,
+            opentalk_types_common::streaming::StreamingTargetKindResource,
+            opentalk_types_common::tariffs::TariffId,
+            opentalk_types_common::tariffs::TariffModuleResource,
+            opentalk_types_common::tariffs::TariffResource,
+            opentalk_types_common::tariffs::TariffStatus,
+            opentalk_types_common::time::DateTimeTz,
+            opentalk_types_common::time::RecurrencePattern,
+            opentalk_types_common::time::RecurrenceRule,
+            opentalk_types_common::time::TimeZone,
+            opentalk_types_common::time::Timestamp,
+            opentalk_types_common::users::DisplayName,
+            opentalk_types_common::users::Language,
+            opentalk_types_common::users::Theme,
+            opentalk_types_common::users::UserId,
+            opentalk_types_common::users::UserTitle,
+            opentalk_types_common::pagination::ItemCount,
+            opentalk_types_common::pagination::PageSize,
+            opentalk_types_common::pagination::Page,
+        ),
+        responses(
+            crate::api::responses::BadRequest,
+            crate::api::responses::BinaryData,
+            crate::api::responses::InternalServerError,
+            crate::api::responses::Unauthorized,
+            crate::api::responses::Forbidden,
+            crate::api::responses::NotFound,
+        ),
+    ),
+    modifiers(&SecurityAddon),
+)]
+pub struct ApiDoc;
+
+struct SecurityAddon;
+
+impl utoipa::Modify for SecurityAddon {
+    fn modify(&self, openapi: &mut utoipa::openapi::OpenApi) {
+        use utoipa::openapi::security::{Http, HttpAuthScheme, SecurityScheme};
+
+        let components = openapi.components.as_mut().unwrap();
+        components.add_security_scheme(
+            "BearerAuth",
+            SecurityScheme::Http(Http::new(HttpAuthScheme::Bearer)),
+        );
+        // TODO: this is strictly speaking no bearer authentication, so we
+        // need to find out whether we can properly describe what we implemented with
+        // the `Authorization: InviteCode …` header.
+        // Supported authentication schemes:
+        // https://www.iana.org/assignments/http-authschemes/http-authschemes.xhtml
+        components.add_security_scheme(
+            "InviteCode",
+            SecurityScheme::Http(Http::new(HttpAuthScheme::Bearer)),
+        );
+    }
+}
+
+fn v1_scope(
+    settings_provider: SettingsProvider,
+    authz: Data<kustos::Authz>,
+    inventory_provider: Data<dyn InventoryProvider>,
+    oidc_ctx: Data<dyn OidcTokenHandler>,
+    acl: kustos::actix_web::KustosService,
+) -> Scope {
+    // the latest version contains the root services
+
+    let scope = web::scope("/v1");
+
+    scope
+        .service(v1::auth::login::post)
+        .service(v1::auth::login::get)
+        .service(v1::auth::logout::post)
+        .service(v1::rooms::by_id::start_invited::post)
+        .service(v1::rooms::by_id::roomserver::start_invited::post)
+        .service(v1::invite::verify::post)
+        .service(v1::turn::get)
+        .service(v1::rooms::by_id::assets::by_id::proxy::get)
+        .service(
+            web::scope("/services")
+                .wrap(api::v1::middleware::service_auth::ServiceAuth::new(
+                    oidc_ctx.clone(),
+                ))
+                .service(api::v1::services::call_in::services())
+                .service(api::v1::services::recording::services()),
+        )
+        .service(
+            // empty scope to differentiate between auth endpoints
+            web::scope("")
+                .wrap(acl)
+                .wrap(api::v1::middleware::user_auth::OidcAuth {
+                    settings_provider,
+                    inventory_provider,
+                    authz,
+                    oidc_ctx,
+                })
+                .service(v1::users::find::get)
+                .service(v1::users::me::patch)
+                .service(v1::users::me::get)
+                .service(v1::users::me::tariff::get)
+                .service(v1::users::me::assets::get)
+                .service(v1::users::me::pending_invites::get)
+                .service(v1::users::by_id::get)
+                .service(v1::rooms::get)
+                .service(v1::rooms::post)
+                .service(v1::rooms::by_id::patch)
+                .service(v1::rooms::by_id::get)
+                .service(v1::rooms::by_id::event::get)
+                .service(v1::rooms::by_id::tariff::get)
+                .service(v1::rooms::by_id::start::post)
+                .service(v1::rooms::by_id::roomserver::start::post)
+                .service(v1::rooms::by_id::delete)
+                .service(v1::events::post)
+                .service(v1::events::get)
+                // "/events/instances" conflicts with "/events/{event_id}" and thus must be listed before
+                .service(v1::events::instances::get)
+                .service(v1::events::by_id::get)
+                .service(v1::events::by_id::patch)
+                .service(v1::events::by_id::delete)
+                .service(v1::users::me::event_favorites::by_id::put)
+                .service(v1::users::me::event_favorites::by_id::delete)
+                .service(v1::events::by_id::instances::by_id::get)
+                .service(v1::events::by_id::instances::get)
+                .service(v1::events::by_id::instances::by_id::patch)
+                .service(v1::events::by_id::invites::post)
+                .service(v1::events::by_id::invites::get)
+                .service(v1::events::by_id::invites::email::delete)
+                .service(v1::events::by_id::invites::by_id::delete)
+                .service(v1::events::by_id::invites::email::patch)
+                .service(v1::events::by_id::invites::by_id::patch)
+                .service(v1::events::by_id::invite::patch)
+                .service(v1::events::by_id::invite::delete)
+                .service(v1::events::by_id::shared_folder::get)
+                .service(v1::events::by_id::shared_folder::put)
+                .service(v1::events::by_id::shared_folder::delete)
+                .service(v1::rooms::by_id::sip::get)
+                .service(v1::rooms::by_id::sip::put)
+                .service(v1::rooms::by_id::sip::delete)
+                .service(v1::rooms::by_id::invites::get)
+                .service(v1::rooms::by_id::invites::post)
+                .service(v1::rooms::by_id::invites::by_code::get)
+                .service(v1::rooms::by_id::invites::by_code::put)
+                .service(v1::rooms::by_id::invites::by_code::delete)
+                .service(v1::rooms::by_id::assets::get)
+                .service(v1::rooms::by_id::assets::post)
+                .service(v1::rooms::by_id::assets::by_id::get)
+                .service(v1::rooms::by_id::assets::by_id::download::get)
+                .service(v1::rooms::by_id::assets::by_id::delete)
+                .service(v1::rooms::by_id::streaming_targets::get)
+                .service(v1::rooms::by_id::streaming_targets::post)
+                .service(v1::rooms::by_id::streaming_targets::by_id::get)
+                .service(v1::rooms::by_id::streaming_targets::by_id::patch)
+                .service(v1::rooms::by_id::streaming_targets::by_id::delete),
+        )
+}
+
+fn internal_service_scope(auth_middleware: Option<ApiKeyAuthorization>) -> Scope {
+    let services = web::scope("/internal");
+
+    let Some(auth_middleware) = auth_middleware else {
+        static WARN: std::sync::Once = std::sync::Once::new();
+        WARN.call_once(|| {
+            log::debug!(
+                "Missing `http.service_api_keys` configuration, internal service routes are disabled"
+            );
+        });
+
+        return services;
+    };
+
+    services.service(
+        web::scope("")
+            .wrap(auth_middleware)
+            .service(api::internal::assets::post_asset)
+            .service(api::internal::module_resources::create)
+            .service(api::internal::module_resources::get)
+            .service(api::internal::module_resources::patch)
+            .service(api::internal::module_resources::delete)
+            .service(api::internal::call_in::post)
+            .service(api::internal::recording::post_start)
+            .service(api::internal::recording::get_upload),
+    )
+}
+
+fn setup_cors(settings_provider: SettingsProvider) -> Cors {
+    use actix_web::http::{Method, header::*};
+
+    let settings = settings_provider.get();
+    let frontend_base_url = &settings.frontend.base_url;
+    let cors_allowed_origins = &settings.http.cors;
+
+    let cors_allowed_origins = cors_allowed_origins
+        .allowed_origin
+        .clone()
+        .map(HttpCorsAllowedOrigins::into_vec)
+        .unwrap_or_else(|| {
+            vec![HttpCorsAllowedOrigin::try_from_url_relaxed(frontend_base_url.clone()).unwrap()]
+        });
+
+    let mut cors = Cors::default();
+
+    for allowed_origin in cors_allowed_origins {
+        cors = if allowed_origin.is_wildcard() {
+            cors.allow_any_origin()
+        } else {
+            cors.allowed_origin(&allowed_origin.header_value())
+        }
+    }
+
+    cors.allowed_header(CONTENT_TYPE)
+        .allowed_header(AUTHORIZATION)
+        .allowed_methods([
+            Method::GET,
+            Method::POST,
+            Method::PUT,
+            Method::PATCH,
+            Method::DELETE,
+        ])
+}
+
+/// Set up TLS for the HTTP server that is provided by the controller
+///
+/// Receives the TLS-related settings from the controller configuration
+/// which contains the path to the private key and the certificate files
+/// from where the TLS configuration is loaded and set up.
+fn setup_rustls(tls: &HttpTls) -> Result<rustls::ServerConfig> {
+    let cert_file = File::open(&tls.certificate).with_whatever_context(|_| {
+        format!("Failed to open certificate file {:?}", &tls.certificate)
+    })?;
+    let certs = rustls_pemfile::certs(&mut BufReader::new(cert_file))
+        .collect::<Result<Vec<CertificateDer>, _>>()
+        .whatever_context("Invalid certificate")?;
+
+    let private_key_file = File::open(&tls.private_key).with_whatever_context(|_| {
+        format!(
+            "Failed to open pkcs8 private key file {:?}",
+            &tls.private_key
+        )
+    })?;
+    let mut key = rustls_pemfile::pkcs8_private_keys(&mut BufReader::new(private_key_file))
+        .collect::<Result<Vec<PrivatePkcs8KeyDer>, _>>()
+        .whatever_context("Invalid pkcs8 private key")?;
+
+    let config = rustls::ServerConfig::builder()
+        .with_no_client_auth()
+        .with_single_cert(certs, rustls_pki_types::PrivateKeyDer::Pkcs8(key.remove(0)))
+        .whatever_context("Invalid DER-encoded key ")?;
+
+    Ok(config)
+}
+
+struct ModuleInitializer {
+    init_data: SignalingModuleInitData,
+    signaling_modules: SignalingModules,
+}
+
+impl ModulesRegistrar for ModuleInitializer {
+    type Error = Whatever;
+
+    fn register<M: SignalingModule>(&mut self) -> Result<()> {
+        let params = M::build_params(self.init_data.clone())
+            .with_whatever_context(|_| format!("Failed to initialize module '{}'", M::NAMESPACE))?;
+
+        if let Some(params) = params {
+            self.signaling_modules.add_module::<M>(params);
+        } else {
+            log::info!(
+                "Skipping module '{}' due to missing configuration",
+                M::NAMESPACE
+            );
+        }
+
+        Ok(())
+    }
+}
+
+fn is_ipv6_available() -> bool {
+    TcpListener::bind((Ipv6Addr::UNSPECIFIED, 0)).is_ok()
+}
+
+fn determine_socket_address(
+    config_address: Option<&str>,
+    config_port: u16,
+) -> std::io::Result<Vec<SocketAddr>> {
+    let to_socket_addrs = if let Some(addr) = config_address {
+        Vec::from_iter((addr, config_port).to_socket_addrs()?)
+    } else if is_ipv6_available() {
+        Vec::from_iter((Ipv6Addr::UNSPECIFIED, config_port).to_socket_addrs()?)
+    } else {
+        Vec::from_iter((Ipv4Addr::UNSPECIFIED, config_port).to_socket_addrs()?)
+    };
+    Ok(to_socket_addrs)
+}
+
+pub fn load_settings_provider(optional_config_path: Option<&Path>) -> Result<SettingsProvider> {
+    let settings_provider =
+        SettingsProvider::load_from_path_or_standard_paths(optional_config_path)
+            .whatever_context("Failed to load settings")?;
+
+    let settings = settings_provider.get();
+
+    if let Err(e) = trace::init(&settings.logging) {
+        let report = Report::from_error(e);
+        eprintln!("Could not initialize log output: {report}");
+    }
+
+    Ok(settings_provider)
+}

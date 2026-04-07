@@ -1,0 +1,85 @@
+# SPDX-FileCopyrightText: OpenTalk GmbH <mail@opentalk.eu>
+#
+# SPDX-License-Identifier: EUPL-1.2
+
+[package]
+authors.workspace = true
+description = "OpenTalk Controller service"
+documentation = "https://docs.rs/opentalk-controller-service"
+edition = "2024"
+homepage.workspace = true
+license = "EUPL-1.2"
+name = "opentalk-controller-service"
+publish = true
+repository.workspace = true
+version.workspace = true
+
+[dependencies]
+async-stream.workspace = true
+async-trait.workspace = true
+base64.workspace = true
+bytes.workspace = true
+chrono.workspace = true
+chrono-tz = { workspace = true, features = ["serde"] }
+derive_more.workspace = true
+diesel-async.workspace = true
+either.workspace = true
+futures.workspace = true
+futures-core.workspace = true
+futures-util.workspace = true
+http.workspace = true
+icu_locid = { workspace = true, features = ["serde"] }
+jsonwebtoken.workspace = true
+kustos.workspace = true
+lapin.workspace = true
+lapin-pool.workspace = true
+log = { workspace = true, features = ["serde"] }
+md5.workspace = true
+openidconnect.workspace = true
+opentalk-cache.workspace = true
+opentalk-controller-service-facade.workspace = true
+opentalk-controller-settings.workspace = true
+opentalk-controller-utils.workspace = true
+opentalk-database.workspace = true
+opentalk-inventory.workspace = true
+opentalk-keycloak-admin.workspace = true
+opentalk-mail-worker-protocol = { workspace = true, features = ["client"] }
+opentalk-nextcloud-client.workspace = true
+opentalk-roomserver-client.workspace = true
+opentalk-roomserver-types.workspace = true
+opentalk-roomserver-types-training-participation-report.workspace = true
+opentalk-signaling-core.workspace = true
+opentalk-signaling-module-breakout.workspace = true
+opentalk-signaling-module-moderation.workspace = true
+opentalk-types-api-internal.workspace = true
+opentalk-types-api-v1 = { workspace = true, features = ["backend"] }
+opentalk-types-common = { workspace = true, features = [
+  "backend",
+  "clap",
+  "kustos",
+] }
+opentalk-types-signaling = { workspace = true, features = ["backend"] }
+opentelemetry = { workspace = true, features = ["metrics", "trace"] }
+opentelemetry_sdk.workspace = true
+parking_lot.workspace = true
+percent-encoding.workspace = true
+phonenumber.workspace = true
+rand.workspace = true
+redis = { workspace = true, features = ["connection-manager", "tokio-comp"] }
+redis-args.workspace = true
+reqwest.workspace = true
+rkyv = { workspace = true, features = ["uuid-1"] }
+rrule.workspace = true
+scoped-futures.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+snafu.workspace = true
+tokio = { workspace = true, features = ["signal"] }
+tracing.workspace = true
+url.workspace = true
+uuid = { workspace = true, features = ["serde", "v4"] }
+
+[dev-dependencies]
+pretty_assertions.workspace = true
+ring.workspace = true
+serial_test.workspace = true

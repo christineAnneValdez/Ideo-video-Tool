@@ -1,0 +1,95 @@
+[2m6:49:08 PM[22m [31m[1m[vite][22m[39m [31mInternal server error: Failed to resolve import "@mui/icons-material/Download" from "src/pages/Dashboard/AdminRecordingsPage/AdminRecordingsPage.tsx". Does the file exist?[39m
+  Plugin: [35mvite:import-analysis[39m
+  File: [36mC:/personal works/ideo-videotool/web-frontend/app/src/pages/Dashboard/AdminRecordingsPage/AdminRecordingsPage.tsx[39m:4:25
+[33m  1  |  import { jsxDEV } from "react/jsx-dev-runtime";
+  2  |  var _s = $RefreshSig$();
+  3  |  import DownloadIcon from "@mui/icons-material/Download";
+     |                            ^
+  4  |  import PauseIcon from "@mui/icons-material/Pause";
+  5  |  import PlayArrowIcon from "@mui/icons-material/PlayArrow";[39m
+      at TransformPluginContext._formatLog (file:///C:/personal%20works/ideo-videotool/web-frontend/node_modules/vite/dist/node/chunks/config.js:28999:43)
+      at TransformPluginContext.error (file:///C:/personal%20works/ideo-videotool/web-frontend/node_modules/vite/dist/node/chunks/config.js:28996:14)
+      at normalizeUrl (file:///C:/personal%20works/ideo-videotool/web-frontend/node_modules/vite/dist/node/chunks/config.js:27119:18)
+      at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+      at async file:///C:/personal%20works/ideo-videotool/web-frontend/node_modules/vite/dist/node/chunks/config.js:27177:32
+      at async Promise.all (index 1)
+      at async TransformPluginContext.transform (file:///C:/personal%20works/ideo-videotool/web-frontend/node_modules/vite/dist/node/chunks/config.js:27145:4)
+      at async EnvironmentPluginContainer.transform (file:///C:/personal%20works/ideo-videotool/web-frontend/node_modules/vite/dist/node/chunks/config.js:28797:14)
+      at async loadAndTransform (file:///C:/personal%20works/ideo-videotool/web-frontend/node_modules/vite/dist/node/chunks/config.js:22670:26)
+[2m6:49:08 PM[22m [31m[1m[vite][22m[39m [31mInternal server error: Failed to resolve import "@mui/icons-material/Download" from "src/pages/Dashboard/AdminRecordingsPage/AdminRecordingsPage.tsx". Does the file exist?[39m
+  Plugin: [35mvite:import-analysis[39m
+  File: [36mC:/personal works/ideo-videotool/web-frontend/app/src/pages/Dashboard/AdminRecordingsPage/AdminRecordingsPage.tsx[39m:4:25
+[33m  1  |  import { jsxDEV } from "react/jsx-dev-runtime";
+  2  |  var _s = $RefreshSig$();
+  3  |  import DownloadIcon from "@mui/icons-material/Download";
+     |                            ^
+  4  |  import PauseIcon from "@mui/icons-material/Pause";
+  5  |  import PlayArrowIcon from "@mui/icons-material/PlayArrow";[39m
+      at TransformPluginContext._formatLog (file:///C:/personal%20works/ideo-videotool/web-frontend/node_modules/vite/dist/node/chunks/config.js:28999:43)
+      at TransformPluginContext.error (file:///C:/personal%20works/ideo-videotool/web-frontend/node_modules/vite/dist/node/chunks/config.js:28996:14)
+      at normalizeUrl (file:///C:/personal%20works/ideo-videotool/web-frontend/node_modules/vite/dist/node/chunks/config.js:27119:18)
+      at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+      at async file:///C:/personal%20works/ideo-videotool/web-frontend/node_modules/vite/dist/node/chunks/config.js:27177:32
+      at async Promise.all (index 1)
+      at async TransformPluginContext.transform (file:///C:/personal%20works/ideo-videotool/web-frontend/node_modules/vite/dist/node/chunks/config.js:27145:4)
+      at async EnvironmentPluginContainer.transform (file:///C:/personal%20works/ideo-videotool/web-frontend/node_modules/vite/dist/node/chunks/config.js:28797:14)
+      at async loadAndTransform (file:///C:/personal%20works/ideo-videotool/web-frontend/node_modules/vite/dist/node/chunks/config.js:22670:26)
+[2m6:49:08 PM[22m [31m[1m[vite][22m[39m [31mInternal server error: Failed to resolve import "@mui/icons-material/Download" from "src/pages/Dashboard/AdminRecordingsPage/AdminRecordingsPage.tsx". Does the file exist?[39m
+  Plugin: [35mvite:import-analysis[39m
+  File: [36mC:/personal works/ideo-videotool/web-frontend/app/src/pages/Dashboard/AdminRecordingsPage/AdminRecordingsPage.tsx[39m:4:25
+[33m  1  |  import { jsxDEV } from "react/jsx-dev-runtime";
+  2  |  var _s = $RefreshSig$();
+  3  |  import DownloadIcon from "@mui/icons-material/Download";
+     |                            ^
+  4  |  import PauseIcon from "@mui/icons-material/Pause";
+  5  |  import PlayArrowIcon from "@mui/icons-material/PlayArrow";[39m
+      at TransformPluginContext._formatLog (file:///C:/personal%20works/ideo-videotool/web-frontend/node_modules/vite/dist/node/chunks/config.js:28999:43)
+      at TransformPluginContext.error (file:///C:/personal%20works/ideo-videotool/web-frontend/node_modules/vite/dist/node/chunks/config.js:28996:14)
+      at normalizeUrl (file:///C:/personal%20works/ideo-videotool/web-frontend/node_modules/vite/dist/node/chunks/config.js:27119:18)
+      at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+      at async file:///C:/personal%20works/ideo-videotool/web-frontend/node_modules/vite/dist/node/chunks/config.js:27177:32
+      at async Promise.all (index 1)
+      at async TransformPluginContext.transform (file:///C:/personal%20works/ideo-videotool/web-frontend/node_modules/vite/dist/node/chunks/config.js:27145:4)
+      at async EnvironmentPluginContainer.transform (file:///C:/personal%20works/ideo-videotool/web-frontend/node_modules/vite/dist/node/chunks/config.js:28797:14)
+      at async loadAndTransform (file:///C:/personal%20works/ideo-videotool/web-frontend/node_modules/vite/dist/node/chunks/config.js:22670:26)
+      at async viteTransformMiddleware (file:///C:/personal%20works/ideo-videotool/web-frontend/node_modules/vite/dist/node/chunks/config.js:24542:20)
+[2m6:50:26 PM[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m Pre-transform error: Failed to resolve import "@mui/icons-material/Download" from "src/pages/Dashboard/AdminRecordingsPage/AdminRecordingsPage.tsx". Does the file exist?
+  Plugin: [35mvite:import-analysis[39m
+  File: [36mC:/personal works/ideo-videotool/web-frontend/app/src/pages/Dashboard/AdminRecordingsPage/AdminRecordingsPage.tsx[39m:4:25
+[33m  1  |  import { jsxDEV } from "react/jsx-dev-runtime";
+  2  |  var _s = $RefreshSig$();
+  3  |  import DownloadIcon from "@mui/icons-material/Download";
+     |                            ^
+  4  |  import PauseIcon from "@mui/icons-material/Pause";
+  5  |  import PlayArrowIcon from "@mui/icons-material/PlayArrow";[39m
+[2m6:50:27 PM[22m [31m[1m[vite][22m[39m [31mInternal server error: Failed to resolve import "@mui/icons-material/Download" from "src/pages/Dashboard/AdminRecordingsPage/AdminRecordingsPage.tsx". Does the file exist?[39m
+  Plugin: [35mvite:import-analysis[39m
+  File: [36mC:/personal works/ideo-videotool/web-frontend/app/src/pages/Dashboard/AdminRecordingsPage/AdminRecordingsPage.tsx[39m:4:25
+[33m  1  |  import { jsxDEV } from "react/jsx-dev-runtime";
+  2  |  var _s = $RefreshSig$();
+  3  |  import DownloadIcon from "@mui/icons-material/Download";
+     |                            ^
+  4  |  import PauseIcon from "@mui/icons-material/Pause";
+  5  |  import PlayArrowIcon from "@mui/icons-material/PlayArrow";[39m
+      at TransformPluginContext._formatLog (file:///C:/personal%20works/ideo-videotool/web-frontend/node_modules/vite/dist/node/chunks/config.js:28999:43)
+      at TransformPluginContext.error (file:///C:/personal%20works/ideo-videotool/web-frontend/node_modules/vite/dist/node/chunks/config.js:28996:14)
+      at normalizeUrl (file:///C:/personal%20works/ideo-videotool/web-frontend/node_modules/vite/dist/node/chunks/config.js:27119:18)
+      at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+      at async file:///C:/personal%20works/ideo-videotool/web-frontend/node_modules/vite/dist/node/chunks/config.js:27177:32
+      at async Promise.all (index 1)
+      at async TransformPluginContext.transform (file:///C:/personal%20works/ideo-videotool/web-frontend/node_modules/vite/dist/node/chunks/config.js:27145:4)
+      at async EnvironmentPluginContainer.transform (file:///C:/personal%20works/ideo-videotool/web-frontend/node_modules/vite/dist/node/chunks/config.js:28797:14)
+      at async loadAndTransform (file:///C:/personal%20works/ideo-videotool/web-frontend/node_modules/vite/dist/node/chunks/config.js:22670:26)
+      at async viteTransformMiddleware (file:///C:/personal%20works/ideo-videotool/web-frontend/node_modules/vite/dist/node/chunks/config.js:24542:20)
+X [ERROR] Cannot use "||" with "??" without parentheses
+
+    vite.config.ts:151:47:
+      151 │             parseSpeakerFromFilename(filename) ||
+          ╵                                                ~~
+
+  Expressions of the form "x ?? y || z" are not allowed in JavaScript. You must disambiguate between "(x ?? y) || z" and "x ?? (y || z)" by adding parentheses.
+
+[31mfailed to load config from C:\personal works\ideo-videotool\web-frontend\app\vite.config.ts[39m
+[2m7:25:18 PM[22m [31m[1m[vite][22m[39m Build failed with 1 error:
+vite.config.ts:151:47: ERROR: Cannot use "||" with "??" without parentheses
+[2m7:25:18 PM[22m [31m[1m[vite][22m[39m server restart failed

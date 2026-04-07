@@ -1,0 +1,484 @@
+# SPDX-FileCopyrightText: OpenTalk Team <mail@opentalk.eu>
+# SPDX-FileCopyrightText: Albrecht Weiche <a.weiche@opentalk.eu>
+# SPDX-FileCopyrightText: Wolfgang Silbermayr <w.silbermayr@opentalk.eu>
+# SPDX-License-Identifier: EUPL-1.2
+---
+spec:
+  inputs:
+    release_version:
+      description: |
+        Version number, e.g. `1.2.3`. Must be in format `<major>.<minor>.<patch>`.
+        Keep at `0.0.0` unless you're in the process of creating a release.
+      type: string
+      regex: ^([0]|([1-9]\d*))\.([0]|([1-9]\d*))\.([0]|([1-9]\d*))$
+      default: 0.0.0
+    release_issue:
+      description: |
+        The number of an issue which should be closed by a release MR created by this pipeline.
+        Keep empty or unset unless you're in the process of creating a release.
+      type: string
+      regex: ^\d*$
+      default: ''
+---
+image: git.opentalk.dev:5050/opentalk/backend/containers/rust:1.93.0-trixie
+
+stages:
+  - build
+  - lint
+  - test
+  - trigger
+  - package
+  - release
+
+variables:
+  KANIKO_IMAGE: git.opentalk.dev:5050/opentalk/opentalk-devops/containers/kaniko:debug-1.25.2
+  SKOPEO_IMAGE: quay.io/skopeo/stable:v1
+  DEFAULT_FLAVOR: alpine
+
+.template_vars:
+  FLAVORS: [alpine, trixie, noble, scratch]
+
+.default_job_condition: &default_job_condition
+  needs: []
+  rules:
+    # Run in merge requests (if there is one job with this instruction, all jobs without
+    # it are ignored for the MR pipeline)
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+    # Run on scheduled pipeline runs
+    - if: $CI_PIPELINE_SOURCE == 'schedule'
+
+include:
+  - project: opentalk/ci/templates/collect-commit-evidence
+    ref: v2
+    file: .gitlab-ci-template.yml
+  - project: opentalk/ci/templates/release-creation
+    inputs:
+      version: $[[ inputs.release_version ]]
+      issue: $[[ inputs.release_issue]]
+    ref: v1
+    file: .gitlab-ci-template.yml
+
+lint:markdown:
+  stage: lint
+  <<: *default_job_condition
+  image: registry.gitlab.com/pipeline-components/markdownlint:latest
+  script:
+    - mdl --style .markdown_style.rb --warnings .
+
+lint:fmt:
+  stage: lint
+  <<: *default_job_condition
+  script:
+    - cargo +nightly fmt -- --check
+
+lint:clippy:
+  stage: lint
+  <<: *default_job_condition
+  script:
+    - cargo clippy --workspace --all-features --tests -- --deny warnings
+
+lint:doc:
+  stage: lint
+  <<: *default_job_condition
+  variables:
+    RUSTDOCFLAGS: -Dwarnings
+  script: cargo doc --workspace --no-deps
+
+lint:dependency_check:
+  stage: lint
+  needs: []
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+      changes:
+        - Cargo.lock
+        - deny.toml
+    - if: $CI_PIPELINE_SOURCE == 'schedule'
+  script:
+    - cargo-deny
+      --all-features
+      --workspace check
+      --deny unmatched-skip
+      --deny license-not-encountered
+      --deny license-exception-not-encountered
+      --hide-inclusion-graph
+
+lint:unnecessary_dependencies:
+  stage: lint
+  needs: []
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+  before_script: if ! cargo machete --version; then cargo install cargo-machete; fi
+  script: cargo machete --with-metadata
+
+lint:yaml:
+  stage: lint
+  <<: *default_job_condition
+  image: alpine:3.23
+  before_script:
+    - apk add --no-cache yamllint
+  script: yamllint .
+
+lint:toml:
+  stage: lint
+  <<: *default_job_condition
+  script: taplo fmt --check
+
+lint:openapi:
+  stage: lint
+  <<: *default_job_condition
+  image:
+    name: redocly/cli
+    entrypoint: ['']
+  script:
+    - /usr/local/bin/openapi lint api/docs/openapi.yml
+
+lint:openapi-spectral:
+  stage: lint
+  <<: *default_job_condition
+  image:
+    name: stoplight/spectral
+    entrypoint: ['']
+  script:
+    - spectral lint --ruleset ci/spectral/openapi.yml lint api/docs/openapi.yml
+
+lint:openapi-up-to-date:
+  stage: lint
+  <<: *default_job_condition
+  needs: [build]
+  script:
+    - target/release/opentalk-roomserver openapi dump > api/docs/openapi.yml
+    - |
+      if ! git diff -w --exit-code; then
+        echo "openapi specification outdated, run 'opentalk-roomserver openapi dump > api/docs/openapi.yml'"
+        exit 1
+      fi
+
+lint:licensing:
+  stage: lint
+  <<: *default_job_condition
+  image:
+    name: fsfe/reuse:latest
+    entrypoint: ['']
+  script:
+    - reuse lint
+
+lint:shellcheck:
+  stage: lint
+  <<: *default_job_condition
+  before_script:
+    - apt-get update && apt-get install -y shellcheck
+  script:
+    - git ls-files --exclude='*.sh' --ignored -c -z | xargs -0r shellcheck
+
+lint:commit:
+  cache: {}
+  image: node:lts-alpine
+  stage: lint
+  <<: *default_job_condition
+  before_script:
+    - apk add --no-cache git
+    - npm install -g @commitlint/cli @commitlint/config-conventional
+  script:
+    - npx commitlint --from $CI_MERGE_REQUEST_DIFF_BASE_SHA --to HEAD --verbose
+
+lint:commit-signature:
+  stage: lint
+  needs: []
+  rules:
+    # Run in merge requests only.
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+  script:
+    # %G? will log signature information for a commit. `N` stands for "no signature", `B` for "bad signature"
+    # refer to https://git-scm.com/docs/pretty-formats#Documentation/pretty-formats.txt-emGem
+    # grep checks that the output does not contain any "N" or "B" characters.
+    - >
+      git log --format=format:'%G?' $CI_MERGE_REQUEST_DIFF_BASE_SHA..HEAD
+      | grep --null-data --quiet --invert-match --regexp="N" --regexp="B"
+
+trigger_changelog_preview:
+  stage: trigger
+  needs: []
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+  variables:
+    PIPELINE_PROJECT_PATH: $CI_PROJECT_PATH
+    PIPELINE_MERGE_REQUEST_PROJECT_PATH: $CI_MERGE_REQUEST_SOURCE_PROJECT_PATH
+    PIPELINE_MERGE_REQUEST_SOURCE_BRANCH_NAME: $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME
+    PIPELINE_MERGE_REQUEST_IID: $CI_MERGE_REQUEST_IID
+  trigger: opentalk/tools/check-changelog
+
+lint:justfile:
+  stage: lint
+  <<: *default_job_condition
+  before_script: if ! just --version; then cargo install just; fi
+  script:
+    # The `--fmt` command-line parameter is still unstable, but valuable anyway.
+    - just --unstable --fmt --check
+
+lint:docs-generated-parts:
+  stage: lint
+  image:
+    name: git.opentalk.dev:5050/opentalk/tools/opentalk-ci-doc-updater:v0.2.0
+    entrypoint: ['']
+  needs:
+    - job: build
+      artifacts: true
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+  before_script:
+    - apt-get update && apt-get install -y git
+  script:
+    - ci/docs-update-generated-parts.sh
+    - |
+      if ! git diff --exit-code; then
+        echo "Generated parts of documentation changed, run ci/docs-update-generated-parts.sh and commit the result"
+        exit 1
+      fi
+
+test:load_typst_plugins:
+  stage: test
+  <<: *default_job_condition
+  needs: []
+  artifacts:
+    paths:
+      - target/typst
+    expire_in: 1 day
+  image:
+    name: git.opentalk.dev:5050/opentalk/backend/containers/typst-plugins:alpine-dev
+    pull_policy: if-not-present
+  script:
+    - mkdir -p target
+    - cp -r /usr/share/typst target/typst
+
+test:cargo_test:
+  stage: test
+  <<: *default_job_condition
+  tags:
+    - testcontainers
+  needs:
+    - test:load_typst_plugins
+  artifacts:
+    reports:
+      junit: target/nextest/ci/junit.xml
+      coverage_report:
+        coverage_format: cobertura
+        path: target/llvm-cov-target/cobertura.xml
+  # this uses region for coverage summary
+  coverage: /TOTAL\s+(\d+\s+)+(\d+\.\d+\%)/
+  script:
+    - cargo llvm-cov nextest --no-report --profile ci --workspace
+    # code coverage for doctests is unstable, so we run them separately
+    - cargo test --doc --workspace --locked
+    - cargo llvm-cov report --doctests --cobertura --output-path target/llvm-cov-target/cobertura.xml
+    - cargo llvm-cov report --summary-only --ignore-filename-regex 'opentalk-roomserver-dui/'
+  variables:
+    TYPST_PACKAGE_CACHE_PATH: $CI_PROJECT_DIR/target/typst/packages
+    RUST_LOG: opentalk=trace
+
+build:
+  stage: build
+  needs: []
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "pipeline"
+      when: never
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    - if: $CI_COMMIT_TAG != null
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+  variables:
+    VERGEN_GIT_SHA: $CI_COMMIT_SHA
+    VERGEN_GIT_BRANCH: $CI_COMMIT_REF_NAME
+  artifacts:
+    paths:
+      - target/release/opentalk-roomserver
+    expire_in: 1 week
+  script:
+    - cargo auditable build --release --locked --workspace
+
+build:docs:
+  stage: build
+  image:
+    name: git.opentalk.dev:5050/opentalk/backend/containers/mkdocs-material:latest
+    entrypoint: ['']
+  needs: []
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+  artifacts:
+    paths:
+      - site/
+  script:
+    - mkdocs build --config-file "$CI_PROJECT_DIR"/mkdocs.yml --strict
+
+build:pages:
+  stage: build
+  image:
+    name: git.opentalk.dev:5050/opentalk/backend/containers/mkdocs-material:latest
+    entrypoint: ['']
+  pages:
+    publish: site
+  needs: []
+  rules:
+    - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
+  before_script: []
+  script:
+    - mkdocs build --config-file "$CI_PROJECT_DIR"/mkdocs.yml --strict
+
+trigger-docs:
+  stage: trigger
+  needs: []
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "pipeline"
+      when: never
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PROJECT_NAME !~ /^.*canary$/
+  trigger:
+    project: opentalk/backend/docs
+
+package:read-tags:
+  stage: package
+  needs: []
+  rules:
+    - if: $CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+$/ && $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    - if: $CI_PIPELINE_SOURCE == "pipeline"
+      when: never
+  image:
+    name: alpine/git
+    entrypoint: ['']
+  artifacts:
+    reports:
+      dotenv: package.env
+  script:
+    - git fetch --tags
+    - TAGS=$(git tag --list | grep "^v[[:digit:]]\+\.[[:digit:]]\+\.[[:digit:]]\+$" | sort -V)
+    - TAGS=$(echo "$TAGS" | sort -V | head -n -1 | tr "\n" " ")
+    - echo "TAGS=$TAGS" >> package.env
+
+package:container-mr:
+  stage: package
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "pipeline"
+      when: never
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+  image:
+    name: $KANIKO_IMAGE
+    pull_policy: if-not-present
+    entrypoint: ['']
+  script:
+    - mkdir -p /kaniko/.docker
+    - >
+      echo
+      "{\"auths\":{\"$CI_REGISTRY\":{\"auth\":\"$(echo -n ${CI_REGISTRY_USER}:${CI_REGISTRY_PASSWORD} | base64)\"}}}" >
+      /kaniko/.docker/config.json
+    # According to https://docs.docker.com/engine/reference/commandline/tag/
+    # the tag may contain lowercase and uppercase letters, digits, underscores,
+    # periods, and hyphens, so we replace everything else by '_'. It cannot start
+    # with a period or hyphen, so we replace those if we find them at the start of a line.
+    # It must be no longer than 128 characters, so we truncate it in addition.
+    #
+    # tr -c means the same as --complement, but busybox tr doesn't have that.
+    #
+    # Some platforms on which this service is deployed allow only 63 characters
+    # for the container tag, so we restrict the length to that.
+    - >
+      IMAGE_TAG=$(
+          echo -n "$CI_MERGE_REQUEST_SOURCE_BRANCH_NAME" |
+          tr -c '[:alnum:]_.-' '_' |
+          sed 's/^[.-]/_/' |
+          cut -c -63
+      )
+    - >
+      /kaniko/executor
+      --registry-mirror=mirror.gcr.io
+      --context $CI_PROJECT_DIR
+      --dockerfile $CI_PROJECT_DIR/Dockerfile
+      --destination $CI_REGISTRY_IMAGE:$IMAGE_TAG
+      --force
+
+package:container-build:
+  parallel:
+    matrix:
+      - FLAVOR: !reference [.template_vars, FLAVORS]
+  stage: package
+  rules:
+    - if: $CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+.*$/
+    - if: $CI_PIPELINE_SOURCE == "pipeline"
+      when: never
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+  image:
+    name: $KANIKO_IMAGE
+    pull_policy: if-not-present
+    entrypoint: ['']
+  script:
+    - mkdir -p /kaniko/.docker
+    - >
+      echo
+      "{\"auths\":{\"$CI_REGISTRY\":{\"auth\":\"$(echo -n ${CI_REGISTRY_USER}:${CI_REGISTRY_PASSWORD} | base64)\"}}}" >
+      /kaniko/.docker/config.json
+    - >
+      /kaniko/executor
+      --registry-mirror=mirror.gcr.io
+      --context $CI_PROJECT_DIR
+      --dockerfile $CI_PROJECT_DIR/Dockerfile-$FLAVOR
+      --destination "$CI_REGISTRY_IMAGE:$FLAVOR-${CI_COMMIT_SHA:0:8}"
+      --force
+
+package:container-create-and-push-tags:
+  parallel:
+    matrix:
+      - FLAVOR: !reference [.template_vars, FLAVORS]
+  stage: package
+  needs:
+    - job: package:read-tags
+      optional: true
+    - job: package:container-build
+  rules:
+    - if: $CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+.*$/
+    - if: $CI_PIPELINE_SOURCE == "pipeline"
+      when: never
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+  image:
+    name: $SKOPEO_IMAGE
+    entrypoint: ['']
+  script:
+    - TAGS_TO_PUSH=$(./ci/create-container-tags.sh "${CI_COMMIT_TAG:-main}" "$TAGS" "$FLAVOR" "$DEFAULT_FLAVOR")
+    - |
+      for tag in $TAGS_TO_PUSH; do
+        skopeo copy \
+        --src-creds="${CI_REGISTRY_USER}":"${CI_REGISTRY_PASSWORD}" \
+        --dest-creds="${CI_REGISTRY_USER}":"${CI_REGISTRY_PASSWORD}" \
+        "docker://${CI_REGISTRY_IMAGE}:$FLAVOR-${CI_COMMIT_SHA:0:8}" "docker://${CI_REGISTRY_IMAGE}:$tag"
+      done
+
+package:read-trivy-ignore-file:
+  parallel:
+    matrix:
+      - FLAVOR: !reference [.template_vars, FLAVORS]
+  stage: package
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'schedule'
+  script:
+    - FILE=$CI_PROJECT_DIR/.trivyignore-$FLAVOR
+    - STR=$(if [[ -f "$FILE" ]]; then sed -e '/^#/d' -e '/^$/d' "$FILE"; fi)
+    - echo "TRIVY_IGNORE_FILE_STR_$FLAVOR=$STR" >> package.env
+  artifacts:
+    reports:
+      dotenv: package.env
+
+package:container-scanning:
+  parallel:
+    matrix:
+      - FLAVOR: !reference [.template_vars, FLAVORS]
+  needs:
+    - package:container-create-and-push-tags
+    - package:read-trivy-ignore-file
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'schedule'
+  stage: package
+  variables:
+    PIPELINE_FULL_IMAGE_NAME: $CI_REGISTRY_IMAGE:dev-$FLAVOR
+    PIPELINE_PROJECT_WITH_NAMESPACE: $CI_PROJECT_NAMESPACE/$CI_PROJECT_NAME
+    PIPELINE_ADDITIONAL_LABELS: team::conference room
+    PIPELINE_TRIVY_IGNORE_FILE_STR_VAR: TRIVY_IGNORE_STR_${FLAVOR}
+  trigger:
+    project: opentalk/opentalk-devops/scan-container
+    strategy: depend
+    forward:
+      pipeline_variables: true

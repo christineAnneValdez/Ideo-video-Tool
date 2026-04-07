@@ -1,0 +1,222 @@
+// SPDX-FileCopyrightText: OpenTalk GmbH <mail@opentalk.eu>
+//
+// SPDX-License-Identifier: EUPL-1.2
+import { Event, TimedEvent } from '@opentalk/rest-api-rtk-query';
+import { render, screen, within, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { Formik, FormikProps } from 'formik';
+
+import { CommonFrequencies } from '../../../utils/rruleUtils';
+import { mockedMeetingFormValues, mockedSingleEvent } from '../../../utils/testUtils';
+import { MeetingFormValues, DashboardDateTimePickerProps } from './DashboardDateTimePicker';
+import DateTimeSection from './DateTimeSection';
+
+let mockTestOnChangeValue: Date | null = null;
+let formikInstance: FormikProps<MeetingFormValues> | null = null;
+
+vi.mock('./DashboardDateTimePicker', () => ({
+  DashboardDateTimePicker: ({ type, onChange, minTimeDate }: DashboardDateTimePickerProps) => {
+    return (
+      <div data-testid={`datetime-picker-${type}`}>
+        <button data-testid={`trigger-onchange-${type}`} onClick={() => onChange && onChange(mockTestOnChangeValue)}>
+          Trigger onChange
+        </button>
+        <p>{minTimeDate ? minTimeDate.toString() : 'No min time date'}</p>
+      </div>
+    );
+  },
+}));
+
+vi.mock('./RecurrenceSection', () => ({
+  __esModule: true,
+  default: () => <div data-testid="recurrence-section" />,
+}));
+
+describe('DateTimeSection', () => {
+  const onRecurrencePatternChange = vi.fn();
+
+  const renderComponent = (existingEvent?: Event, meetingFormValues?: MeetingFormValues) => {
+    const initialMeetingFormValues = meetingFormValues ?? mockedMeetingFormValues;
+    render(
+      <Formik initialValues={initialMeetingFormValues} onSubmit={vi.fn()}>
+        {(formik) => {
+          formikInstance = formik;
+          return (
+            <DateTimeSection
+              formik={formik}
+              existingEvent={existingEvent}
+              onRecurrencePatternChange={onRecurrencePatternChange}
+            />
+          );
+        }}
+      </Formik>
+    );
+  };
+
+  it('renders start and end date pickers and recurrence section', () => {
+    renderComponent();
+    expect(screen.getByTestId('datetime-picker-start')).toBeInTheDocument();
+    expect(screen.getByTestId('datetime-picker-end')).toBeInTheDocument();
+    expect(screen.getByTestId('recurrence-section')).toBeInTheDocument();
+  });
+
+  it('resets recurrence pattern for time independent events', async () => {
+    const formValues: MeetingFormValues = {
+      ...mockedMeetingFormValues,
+      isTimeDependent: false,
+      recurrencePattern: CommonFrequencies.WEEKLY,
+    };
+    renderComponent(undefined, formValues);
+    await waitFor(() => {
+      expect(formikInstance?.values.recurrencePattern).toBe(CommonFrequencies.NONE);
+    });
+  });
+
+  describe('start date picker', () => {
+    it('sets empty string if start date is null', async () => {
+      mockTestOnChangeValue = null;
+      renderComponent();
+      const validateFieldSpy = vi.spyOn(formikInstance!, 'validateField');
+      await userEvent.click(screen.getByTestId('trigger-onchange-start'));
+
+      expect(formikInstance?.values.startDate).toBe('');
+      expect(validateFieldSpy).toHaveBeenCalledExactlyOnceWith('startDate');
+
+      validateFieldSpy.mockRestore();
+    });
+    it('sets invalid date string if start date is invalid', async () => {
+      mockTestOnChangeValue = new Date('invalid');
+      renderComponent();
+      const validateFieldSpy = vi.spyOn(formikInstance!, 'validateField');
+      await userEvent.click(screen.getByTestId('trigger-onchange-start'));
+
+      expect(formikInstance?.values.startDate).toBe('Invalid Date');
+      expect(validateFieldSpy).toHaveBeenCalledExactlyOnceWith('startDate');
+
+      validateFieldSpy.mockRestore();
+    });
+    it('sets start and end date and validates each exactly once', async () => {
+      mockTestOnChangeValue = new Date('05 October 2025 14:48 UTC');
+      renderComponent();
+
+      const startValidateSpy = vi.fn();
+      const endValidateSpy = vi.fn();
+
+      const originalValidate = formikInstance!.validateField.bind(formikInstance);
+
+      vi.spyOn(formikInstance!, 'validateField').mockImplementation((field) => {
+        if (field === 'startDate') {
+          startValidateSpy('startDate');
+        }
+        if (field === 'endDate') {
+          endValidateSpy('endDate');
+        }
+        return originalValidate(field);
+      });
+
+      await userEvent.click(screen.getByTestId('trigger-onchange-start'));
+
+      expect(formikInstance?.values.startDate).toBe('2025-10-05T14:48:00.000Z');
+      expect(startValidateSpy).toHaveBeenCalledExactlyOnceWith('startDate');
+
+      expect(formikInstance?.values.endDate).toBe('2025-10-05T15:48:00.000Z');
+      expect(endValidateSpy).toHaveBeenCalledExactlyOnceWith('endDate');
+    });
+  });
+  describe('end date picker', () => {
+    it('sets empty string if end date is null', async () => {
+      mockTestOnChangeValue = null;
+      renderComponent();
+      const validateFieldSpy = vi.spyOn(formikInstance!, 'validateField');
+      await userEvent.click(screen.getByTestId('trigger-onchange-end'));
+
+      expect(formikInstance?.values.endDate).toBe('');
+      expect(validateFieldSpy).toHaveBeenCalledExactlyOnceWith('endDate');
+
+      validateFieldSpy.mockRestore();
+    });
+    it('sets invalid date string if end date is invalid', async () => {
+      mockTestOnChangeValue = new Date('invalid');
+      renderComponent();
+      const validateFieldSpy = vi.spyOn(formikInstance!, 'validateField');
+      await userEvent.click(screen.getByTestId('trigger-onchange-end'));
+
+      expect(formikInstance?.values.endDate).toBe('Invalid Date');
+      expect(validateFieldSpy).toHaveBeenCalledExactlyOnceWith('endDate');
+
+      validateFieldSpy.mockRestore();
+    });
+    it('sets correct start date in ISO format and updates end date if start date is valid', async () => {
+      mockTestOnChangeValue = new Date('05 October 2025 14:48 UTC');
+      renderComponent();
+      const validateFieldSpy = vi.spyOn(formikInstance!, 'validateField');
+      await userEvent.click(screen.getByTestId('trigger-onchange-end'));
+
+      expect(formikInstance?.values.endDate).toBe('2025-10-05T14:48:00.000Z');
+      expect(validateFieldSpy).toHaveBeenCalledExactlyOnceWith('endDate');
+
+      validateFieldSpy.mockRestore();
+    });
+  });
+  describe('min time date passed to pickers', () => {
+    beforeEach(() => {
+      vi.useFakeTimers();
+    });
+
+    afterEach(() => {
+      vi.runOnlyPendingTimers();
+      vi.useRealTimers();
+    });
+
+    it('sets min time date to current time for a new event', () => {
+      const now = new Date();
+      renderComponent();
+      const startDatePicker = screen.getByTestId('datetime-picker-start');
+      expect(within(startDatePicker).getByText(now.toString())).toBeInTheDocument();
+      const endDatePicker = screen.getByTestId('datetime-picker-end');
+      expect(within(endDatePicker).getByText(now.toString())).toBeInTheDocument();
+    });
+    it('sets min time date to current time for time independent existing event', () => {
+      const now = new Date();
+      renderComponent({ ...mockedSingleEvent, isTimeIndependent: true });
+      const startDatePicker = screen.getByTestId('datetime-picker-start');
+      expect(within(startDatePicker).getByText(now.toString())).toBeInTheDocument();
+      const endDatePicker = screen.getByTestId('datetime-picker-end');
+      expect(within(endDatePicker).getByText(now.toString())).toBeInTheDocument();
+    });
+    it('sets min time date to current time for time dependant existing event, which start time is in the future', () => {
+      const mockNow = new Date('2025-10-05T14:48:00.000Z');
+      vi.setSystemTime(mockNow);
+      renderComponent({
+        ...mockedSingleEvent,
+        isTimeIndependent: true,
+        startsAt: {
+          datetime: '2025-12-05T14:48:00.000Z',
+          timezone: 'Europe/Berlin',
+        },
+      } as TimedEvent);
+      const startDatePicker = screen.getByTestId('datetime-picker-start');
+      expect(within(startDatePicker).getByText(mockNow.toString())).toBeInTheDocument();
+      const endDatePicker = screen.getByTestId('datetime-picker-end');
+      expect(within(endDatePicker).getByText(mockNow.toString())).toBeInTheDocument();
+    });
+    it('unsets min time date to for time dependant existing event, which start time is in the past', () => {
+      const mockNow = new Date('2025-10-05T14:48:00.000Z');
+      vi.setSystemTime(mockNow);
+      renderComponent({
+        ...mockedSingleEvent,
+        isTimeIndependent: false,
+        startsAt: {
+          datetime: '2025-08-05T14:48:00.000Z',
+          timezone: 'Europe/Berlin',
+        },
+      } as TimedEvent);
+      const startDatePicker = screen.getByTestId('datetime-picker-start');
+      expect(within(startDatePicker).queryByText(mockNow.toString())).not.toBeInTheDocument();
+      expect(within(startDatePicker).getByText('No min time date')).toBeInTheDocument();
+      const endDatePicker = screen.getByTestId('datetime-picker-end');
+      expect(within(endDatePicker).queryByText(mockNow.toString())).not.toBeInTheDocument();
+      expect(within(endDatePicker).getByText('No min time date')).toBeInTheDocument();
+    });
+  });
+});

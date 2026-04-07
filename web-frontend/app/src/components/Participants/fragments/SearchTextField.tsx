@@ -1,0 +1,110 @@
+// SPDX-FileCopyrightText: OpenTalk GmbH <mail@opentalk.eu>
+//
+// SPDX-License-Identifier: EUPL-1.2
+import { InputAdornment, useTheme } from '@mui/material';
+import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
+
+import { SearchIcon, SortIcon } from '../../../assets/icons';
+import { AdornmentIconButton, CommonTextField, SortPopoverMenu } from '../../../commonComponents';
+import { useAppDispatch, useAppSelector } from '../../../hooks';
+import { selectParticipantsSortOption, setParticipantsSortOption } from '../../../store/slices/uiSlice';
+import { SortOption } from '../../../types';
+import { items } from './constants';
+
+interface SearchFieldProps {
+  onSearch: (search: string) => void;
+  fullWidth?: boolean;
+  showSort?: boolean;
+  searchValue?: string;
+}
+
+const SearchTextField = ({ onSearch, fullWidth, showSort, searchValue = '' }: SearchFieldProps) => {
+  const id = 'sort-search-participants';
+  const { t } = useTranslation();
+  const theme = useTheme();
+  const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
+  const [isExpanded, setIsExpanded] = useState<boolean>(false);
+  const [hasFocus, setFocus] = useState<boolean>(false);
+  const sortType = useAppSelector(selectParticipantsSortOption);
+  const dispatch = useAppDispatch();
+
+  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    onSearch(event.target.value);
+  };
+
+  const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+    const target = event.currentTarget;
+    setAnchorEl((currentAnchor) => (currentAnchor ? null : target));
+    setIsExpanded((expanded) => !expanded);
+  };
+
+  const handleSortSelected = (sort: string) => {
+    dispatch(setParticipantsSortOption(sort as SortOption));
+  };
+  const handleFocus = () => {
+    setFocus(true);
+  };
+  const handleBlur = () => {
+    setFocus(false);
+  };
+
+  const handleClose = () => {
+    setIsExpanded(false);
+    setAnchorEl(null);
+  };
+
+  return (
+    <CommonTextField
+      fullWidth={fullWidth}
+      value={searchValue}
+      onChange={handleSearchChange}
+      size="small"
+      onFocus={handleFocus}
+      onBlur={handleBlur}
+      label={t('participant-search-label')}
+      placeholder={t('global-name-placeholder')}
+      multiline
+      slotProps={{
+        input: {
+          startAdornment: (
+            <InputAdornment position="start">
+              <SearchIcon />
+            </InputAdornment>
+          ),
+          endAdornment: showSort && (
+            <InputAdornment position="end">
+              <AdornmentIconButton
+                onClick={handleClick}
+                edge="end"
+                aria-label={t('sort-by')}
+                aria-expanded={isExpanded}
+                aria-controls={id}
+                aria-haspopup="menu"
+                onKeyDown={(event) => event.stopPropagation()}
+                onKeyUp={(event) => event.stopPropagation()}
+                parentHasFocus={hasFocus}
+              >
+                <SortIcon />
+              </AdornmentIconButton>
+              {anchorEl && isExpanded && (
+                <SortPopoverMenu
+                  id={id}
+                  anchorEl={anchorEl}
+                  isOpen={isExpanded}
+                  items={items}
+                  selectedOptionType={sortType}
+                  onChange={handleSortSelected}
+                  onClose={handleClose}
+                />
+              )}
+            </InputAdornment>
+          ),
+        },
+        inputLabel: { sx: { fontWeight: theme.typography.fontWeightRegular } },
+      }}
+    />
+  );
+};
+
+export default SearchTextField;

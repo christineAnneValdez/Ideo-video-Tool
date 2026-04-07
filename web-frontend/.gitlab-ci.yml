@@ -1,0 +1,644 @@
+# SPDX-FileCopyrightText: OpenTalk GmbH <mail@opentalk.eu>
+#
+# SPDX-License-Identifier: EUPL-1.2
+
+---
+spec:
+  inputs:
+    release_version:
+      description: |
+        Version number, e.g. `1.2.3`. Must be in format `<major>.<minor>.<patch>`.
+        Keep at `0.0.0` unless you're in the process of creating a release.
+      type: string
+      regex: ^([0]|([1-9]\d*))\.([0]|([1-9]\d*))\.([0]|([1-9]\d*))$
+      default: 0.0.0
+    release_issue:
+      description: |
+        The number of an issue which should be closed by a release MR created by this pipeline.
+        Keep empty or unset unless you're in the process of creating a release.
+      type: string
+      regex: ^\d*$
+      default: ''
+---
+default:
+  image: node:24.13.1-alpine
+
+stages:
+  - analyze
+  - lint
+  - trigger
+  - test
+  - prepare-artifact
+  - build
+  - package
+  - push
+  - scan
+  - e2e
+  - review-app
+  - cleanup
+  - release
+
+variables:
+  KANIKO_IMAGE: git.opentalk.dev:5050/opentalk/opentalk-devops/containers/kaniko:debug-1.25.5
+  SKOPEO_IMAGE: quay.io/skopeo/stable:v1.20
+
+.setup-pnpm: &setup-pnpm
+  - npm install -g corepack@latest
+  - corepack enable
+  - |
+    PNPM_VERSION=$(node -p "require('./package.json').packageManager.split('@')[1]")
+    corepack prepare "pnpm@$PNPM_VERSION" --activate
+  - pnpm config set store-dir .pnpm-store
+
+include:
+  - project: opentalk/ci/templates/collect-commit-evidence
+    ref: v2
+    file: .gitlab-ci-template.yml
+  - project: opentalk/ci/templates/release-creation
+    inputs:
+      version: $[[ inputs.release_version ]]
+      issue: $[[ inputs.release_issue]]
+    ref: v1
+    file: .gitlab-ci-template.yml
+
+code_review:
+  stage: analyze
+  when: manual
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+  before_script:
+    - apk add --no-cache git
+    - GIT_URL=https://gitlab-ci-token:${CI_JOB_TOKEN}@git.opentalk.dev/opentalk/tools/coreebo.git
+    - git clone --depth 1 --branch $COREEBO_VERSION $GIT_URL
+    - cd coreebo
+    - npm ci
+  script:
+    - npm run review -- -id $CI_MERGE_REQUEST_IID
+
+prettier+eslint:
+  stage: lint
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+  before_script:
+    - *setup-pnpm
+  script:
+    - pnpm install
+    - pnpm lint
+    - pnpm fmt:ci
+
+fast-typescript-analyzer:
+  stage: lint
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+  script:
+    - npx --yes fta-cli --format json --score-cap 1000 . > ./fta-report.json
+    - npx --yes fta-cli --format table --score-cap 1000 .
+    - npx --yes fta-cli .
+  artifacts:
+    when: always
+    paths:
+      - fta-report.json
+
+typecheck:
+  stage: lint
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+  before_script:
+    - *setup-pnpm
+  script:
+    - pnpm install
+    - pnpm build:libs
+    - pnpm typecheck
+
+circular-deps:
+  stage: lint
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+  before_script:
+    - *setup-pnpm
+  script:
+    - pnpm install
+    - pnpm deps:circular
+
+yaml:
+  stage: lint
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+  before_script:
+    - apk add --no-cache yamllint
+  script: yamllint .
+
+compliance:
+  stage: lint
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+  before_script:
+    - apk add --no-cache git
+    - *setup-pnpm
+    - pnpm install
+  script:
+    - pnpm licensee --production --errors-only
+
+licensing:
+  stage: lint
+  image:
+    name: fsfe/reuse:6.2.0
+    entrypoint: ['']
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+  script:
+    - reuse lint
+
+audit:
+  stage: lint
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+  before_script:
+    - *setup-pnpm
+  script:
+    - pnpm audit --prod
+  allow_failure: true
+
+commit:
+  stage: lint
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+  before_script:
+    - apk add --no-cache git
+    - npm install -g @commitlint/cli @commitlint/config-conventional
+  script:
+    - npx commitlint --from $CI_MERGE_REQUEST_DIFF_BASE_SHA --to HEAD --verbose
+
+unused-deps:
+  stage: lint
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+  before_script:
+    - apk add --no-cache git
+    - *setup-pnpm
+    - pnpm install
+  script:
+    - pnpm knip --include dependencies
+
+unused-files:
+  stage: lint
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+  before_script:
+    - apk add --no-cache git
+    - *setup-pnpm
+    - pnpm install
+  script:
+    - pnpm knip --include files
+
+commit-signature:
+  stage: lint
+  needs: []
+  rules:
+    # Run in merge requests only.
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+  before_script:
+    - apk add --no-cache git gnupg
+  script:
+    # %G? will log signature information for a commit. `N` stands for "no signature", `B` for "bad signature"
+    # refer to https://git-scm.com/docs/pretty-formats#Documentation/pretty-formats.txt-emGem
+    # grep checks that the output does not contain any "N" or "B" characters.
+    - >
+      git log --format=format:'%G?' $CI_MERGE_REQUEST_DIFF_BASE_SHA..HEAD
+      | tr -d '\n'
+      | grep -q -v -e "N" -e "B"
+
+trigger-changelog-preview:
+  stage: trigger
+  needs: []
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+  variables:
+    # We need to hard code the target repository since the pipeline is running in the forked repository
+    PIPELINE_PROJECT_PATH: opentalk/frontend/web/web-app
+    PIPELINE_MERGE_REQUEST_PROJECT_PATH: $CI_MERGE_REQUEST_SOURCE_PROJECT_PATH
+    PIPELINE_MERGE_REQUEST_SOURCE_BRANCH_NAME: $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME
+    PIPELINE_MERGE_REQUEST_IID: $CI_MERGE_REQUEST_IID
+  trigger: opentalk/tools/check-changelog
+
+unit-tests:
+  stage: test
+  needs: []
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+    - if: $CI_COMMIT_TAG && $CI_PROJECT_ROOT_NAMESPACE == 'opentalk'
+  before_script:
+    - apk add --no-cache git
+    - *setup-pnpm
+    - pnpm install
+  script:
+    - pnpm test:unit:ci
+  artifacts:
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage/cobertura-coverage.xml
+  coverage: /All files[^\|]*\|[^\|]*\s+([\d\.]+)/
+
+build:
+  stage: prepare-artifact
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+    - if: $CI_COMMIT_TAG && $CI_PROJECT_ROOT_NAMESPACE == 'opentalk'
+  before_script:
+    - apk add git jq
+    - *setup-pnpm
+    - pnpm install
+  script:
+    - pnpm build
+    - echo v$(jq -r '.version' ./app/package.json) > ./dist/FRONTEND_VERSION
+  artifacts:
+    paths:
+      - dist/*
+    expire_in: 1 days
+
+build-profiling:
+  stage: prepare-artifact
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+    - if: $CI_COMMIT_TAG && $CI_PROJECT_ROOT_NAMESPACE == 'opentalk'
+  before_script:
+    - apk add git jq
+    - *setup-pnpm
+    - pnpm install
+  script:
+    - pnpm build:profiling
+    - jq -r '.version' ./app/package.json > ./dist-profiling/FRONTEND_VERSION
+  artifacts:
+    paths:
+      - dist-profiling/*
+    expire_in: 1 days
+
+# Upload Source Maps to our glitchtip instance when a tag is created and pushed to main
+upload-sourcemaps:
+  stage: prepare-artifact
+  dependencies:
+    - build
+  needs:
+    - build
+  rules:
+    - if: $CI_COMMIT_TAG && $CI_PROJECT_ROOT_NAMESPACE == 'opentalk'
+  before_script:
+    - *setup-pnpm
+    - pnpm add -w @sentry/cli
+    - echo "[ defaults ]" >> .sentryclirc
+    - echo "url=${GLITCHTIP_URL}" >> .sentryclirc
+    - echo "org=${GLITCHTIP_ORG}" >> .sentryclirc
+    - echo "project=${GLITCHTIP_PROJECT}" >> .sentryclirc
+  script:
+    - RELEASE_TAG=${CI_COMMIT_TAG:-999.0.0-unreleased}
+    - node_modules/.bin/sentry-cli sourcemaps inject dist/
+    - node_modules/.bin/sentry-cli login --auth-token $GLITCHTIP_AUTH_TOKEN
+    - node_modules/.bin/sentry-cli sourcemaps upload --release $RELEASE_TAG dist/
+  artifacts:
+    paths:
+      - dist/*
+    expire_in: 1 days
+
+container-mr:
+  stage: build
+  dependencies:
+    - upload-sourcemaps
+    - build
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "pipeline"
+      when: never
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+  image:
+    name: $KANIKO_IMAGE
+    entrypoint: ['']
+    pull_policy: if-not-present
+  script:
+    - mkdir -p /kaniko/.docker
+    - >
+      echo
+      "{\"auths\":{\"$CI_REGISTRY\":{\"auth\":\"$(echo -n ${CI_REGISTRY_USER}:${CI_REGISTRY_PASSWORD} | base64)\"}}}" >
+      /kaniko/.docker/config.json
+    - >
+      IMAGE_TAG=$(
+          echo -n "$CI_MERGE_REQUEST_SOURCE_BRANCH_NAME" |
+          tr -c '[:alnum:]_.-' '_' |
+          sed 's/^[.-]/_/' |
+          cut -c -63
+      )
+    - >
+      /kaniko/executor
+      --registry-mirror=mirror.gcr.io
+      --context $CI_PROJECT_DIR
+      --dockerfile $CI_PROJECT_DIR/ci/Dockerfile
+      --destination ${CI_REGISTRY_IMAGE}:${CI_MERGE_REQUEST_IID}_${CI_COMMIT_REF_SLUG}
+      --force
+      --digest-file digest.txt
+  artifacts:
+    paths:
+      - digest.txt
+    expire_in: 1 days
+
+container-profiling-mr:
+  stage: build
+  dependencies:
+    - build-profiling
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "pipeline"
+      when: never
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+  image:
+    name: $KANIKO_IMAGE
+    entrypoint: ['']
+    pull_policy: if-not-present
+  script:
+    - mkdir -p /kaniko/.docker
+    - >
+      echo
+      "{\"auths\":{\"$CI_REGISTRY\":{\"auth\":\"$(echo -n ${CI_REGISTRY_USER}:${CI_REGISTRY_PASSWORD} | base64)\"}}}" >
+      /kaniko/.docker/config.json
+    - >
+      IMAGE_TAG=$(
+          echo -n "$CI_MERGE_REQUEST_SOURCE_BRANCH_NAME" |
+          tr -c '[:alnum:]_.-' '_' |
+          sed 's/^[.-]/_/' |
+          cut -c -63
+      )
+    - >
+      /kaniko/executor
+      --registry-mirror=mirror.gcr.io
+      --context $CI_PROJECT_DIR
+      --dockerfile $CI_PROJECT_DIR/ci/Dockerfile
+      --destination ${CI_REGISTRY_IMAGE}:${CI_MERGE_REQUEST_IID}_${CI_COMMIT_REF_SLUG}-profiling
+      --build-arg DIST_FOLDER=dist-profiling
+      --force
+      --digest-file ./profiling-digest.txt
+  artifacts:
+    paths:
+      - profiling-digest.txt
+    expire_in: 1 days
+
+container:
+  stage: build
+  rules:
+    - if: $CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+.*$/
+    - if: $CI_PIPELINE_SOURCE == "pipeline"
+      when: never
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+  image:
+    name: $KANIKO_IMAGE
+    entrypoint: ['']
+    pull_policy: if-not-present
+  script:
+    - mkdir -p /kaniko/.docker
+    - >
+      echo
+      "{\"auths\":{\"$CI_REGISTRY\":{\"auth\":\"$(echo -n ${CI_REGISTRY_USER}:${CI_REGISTRY_PASSWORD} | base64)\"}}}" >
+      /kaniko/.docker/config.json
+    - >
+      /kaniko/executor
+      --registry-mirror=mirror.gcr.io
+      --context $CI_PROJECT_DIR
+      --dockerfile $CI_PROJECT_DIR/ci/Dockerfile
+      --build-arg DIST_FOLDER=dist
+      --destination "$CI_REGISTRY_IMAGE:${CI_COMMIT_SHA:0:8}"
+      --force
+
+container-profiling:
+  stage: build
+  rules:
+    - if: $CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+.*$/
+    - if: $CI_PIPELINE_SOURCE == "pipeline"
+      when: never
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+  image:
+    name: $KANIKO_IMAGE
+    entrypoint: ['']
+    pull_policy: if-not-present
+  script:
+    - mkdir -p /kaniko/.docker
+    - >
+      echo
+      "{\"auths\":{\"$CI_REGISTRY\":{\"auth\":\"$(echo -n ${CI_REGISTRY_USER}:${CI_REGISTRY_PASSWORD} | base64)\"}}}" >
+      /kaniko/.docker/config.json
+    - >
+      /kaniko/executor
+      --registry-mirror=mirror.gcr.io
+      --context $CI_PROJECT_DIR
+      --dockerfile $CI_PROJECT_DIR/ci/Dockerfile
+      --build-arg DIST_FOLDER=dist-profiling
+      --destination "$CI_REGISTRY_IMAGE:${CI_COMMIT_SHA:0:8}-profiling"
+      --destination $CI_REGISTRY_IMAGE:profiling
+      --force
+
+read-tags:
+  stage: push
+  needs: []
+  rules:
+    - if: $CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+.*$/
+    - if: $CI_PIPELINE_SOURCE == "pipeline"
+      when: never
+  image:
+    name: alpine/git:v2.52.0
+    entrypoint: ['']
+    pull_policy: if-not-present
+  artifacts:
+    reports:
+      dotenv: package.env
+  script:
+    - git fetch --tags
+    - TAGS=$(git tag --list | grep "^v[[:digit:]]\+\.[[:digit:]]\+\.[[:digit:]]\+.*$" | sort -V)
+    - TAGS=$(echo "$TAGS" | head -n -1 | tr "\n" " ")
+    - echo "TAGS=$TAGS" > package.env
+
+container-create-and-push-tags:
+  stage: push
+  needs:
+    - job: read-tags
+      optional: true
+    - job: container
+    - job: container-profiling
+  rules:
+    - if: $CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+.*$/
+    - if: $CI_PIPELINE_SOURCE == "pipeline"
+      when: never
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+  image:
+    name: $SKOPEO_IMAGE
+    entrypoint: ['']
+    pull_policy: if-not-present
+  script:
+    - TAGS_TO_PUSH=$(./ci/create-container-tags.sh "${CI_COMMIT_TAG:-main}" "$TAGS")
+    - |
+      for tag in $TAGS_TO_PUSH; do
+        SRC_TAG="${CI_COMMIT_SHA:0:8}"
+        if [[ $tag == *"-profiling" ]]; then
+           SRC_TAG="${CI_COMMIT_SHA:0:8}-profiling"
+        fi
+        skopeo copy \
+        --src-creds="${CI_REGISTRY_USER}":"${CI_REGISTRY_PASSWORD}" \
+        --dest-creds="${CI_REGISTRY_USER}":"${CI_REGISTRY_PASSWORD}" \
+        "docker://${CI_REGISTRY_IMAGE}:${SRC_TAG}" "docker://${CI_REGISTRY_IMAGE}:$tag"
+      done
+    - echo "TAGS=$TAGS_TO_PUSH" > package.env
+  artifacts:
+    reports:
+      dotenv: package.env
+
+push-and-sign-images-to-harbor:
+  needs:
+    - container-create-and-push-tags
+  rules:
+    - if: $CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+.*$/
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+  stage: push
+  variables:
+    PIPELINE_FULL_IMAGE_NAME: $CI_REGISTRY_IMAGE
+    PIPELINE_NAMESPACE_SUFFIX: web-frontend
+    PIPELINE_TAGS: $TAGS
+  trigger:
+    project: opentalk/opentalk-devops/push-and-sign-images-for-the-opentalk-namespace
+    strategy: depend
+    forward:
+      pipeline_variables: true
+
+read-trivy-ignore-file:
+  stage: scan
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'schedule'
+  script:
+    - echo "TRIVY_IGNORE_STR=$(
+         cat $CI_PROJECT_DIR/.trivyignore | sed -n 'H;${x;s/^\n//;s/\n/\\n/g;p}'
+      )"  > package.env
+  artifacts:
+    reports:
+      dotenv: package.env
+
+container-scanning:
+  needs:
+    - container
+    - read-trivy-ignore-file
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'schedule'
+  stage: scan
+  variables:
+    PIPELINE_FULL_IMAGE_NAME: $CI_REGISTRY_IMAGE:dev
+    PIPELINE_PROJECT_WITH_NAMESPACE: $CI_PROJECT_NAMESPACE/$CI_PROJECT_NAME
+    PIPELINE_ADDITIONAL_LABELS: Frontend::Web App
+    PIPELINE_TRIVY_IGNORE_FILE_STR_VAR: TRIVY_IGNORE_STR
+  trigger:
+    project: opentalk/opentalk-devops/scan-container
+    strategy: depend
+    forward:
+      pipeline_variables: true
+
+run-smoke-e2e-tests:
+  needs:
+    - container-mr
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+  stage: e2e
+  variables:
+    FRONTEND_TAG: ${CI_MERGE_REQUEST_IID}_${CI_COMMIT_REF_SLUG}
+    RUN_ONLY_SMOKE_TESTS: true
+  trigger:
+    project: opentalk/qa/e2e-tests
+    strategy: depend
+    forward:
+      pipeline_variables: true
+
+run-full-e2e-tests:
+  when: manual
+  allow_failure: true
+  needs:
+    - container-mr
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+  stage: e2e
+  variables:
+    FRONTEND_TAG: ${CI_MERGE_REQUEST_IID}_${CI_COMMIT_REF_SLUG}
+  trigger:
+    project: opentalk/qa/e2e-tests
+    strategy: depend
+    forward:
+      pipeline_variables: true
+
+deploy:
+  stage: review-app
+  needs:
+    - container-mr
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+  image:
+    name: alpine/helm:4.1.1
+    pull_policy: if-not-present
+  tags:
+    - kubernetes
+  before_script:
+    - helm repo add --username gitlab-ci-token --password ${CI_JOB_TOKEN}
+      opentalk https://git.opentalk.dev/api/v4/projects/649/packages/helm/testing
+  script:
+    - DIGEST=$(cat "./digest.txt")
+    - helm uninstall frontend-$CI_MERGE_REQUEST_IID -n review-latest || true
+    - >
+      helm upgrade --version 4.4.1 --install --force frontend-$CI_MERGE_REQUEST_IID opentalk/opentalk-helm
+      --set tags.standard=false
+      --set tags.webapp=true
+      --set webapp.image.pullPolicy=IfNotPresent
+      --set webapp.image.registry=$CI_REGISTRY
+      --set webapp.image.repository=$CI_PROJECT_PATH
+      --set webapp.image.tag="@$DIGEST"
+      --set webapp.imagePullSecrets[0].name=git
+      --set 'webapp.ingress.annotations.kubernetes\.io/tls-acme=null'
+      --set 'webapp.ingress.annotations.cert-manager\.io/cluster-issuer=null'
+      --set webapp.ingress.enabled=true
+      --set webapp.ingress.className=traefik
+      --set webapp.ingress.tls[0].secretNameOverride=review-latest-tls
+      --set global.defaultWebServiceProtocol=https
+      --set global.webapp.domain=$CI_MERGE_REQUEST_IID.review-latest.kube.opentalk.run
+      --set global.livekit.domain=livekit.review-latest.kube.opentalk.run
+      --set global.oidc.baseUrl=https://accounts.review-latest.kube.opentalk.run/auth
+      --set global.oidc.realm=opentalk
+      --set global.oidc.webapp.clientId=Webapp
+      --set global.backend.domain=controller.review-latest.kube.opentalk.run
+      --set webapp.ndtDomain=ndt.mailbox.org
+      --set webapp.errorReportDomain=opentalk.eu
+      --set webapp.imprintUrl=https://opentalk.eu/en/terms-of-use
+      --set webapp.dataProtectionUrl=https://opentalk.eu/en/data-protection
+      --set webapp.helpdeskUrl=https://opentalk.eu/docs/user/
+      --set webapp.contactSupportUrl=https://opentalk.eu/en/contact-our-support-team
+      --set webapp.sentryDsn=$SENTRY_DSN_TESTING
+      --set webapp.livekit.domain=livekit.review-latest.kube.opentalk.run
+      --set-string
+      'webapp.ingress.annotations.traefik\.ingress\.kubernetes\.io/router\.middlewares=review-latest-auth@kubernetescrd'
+      -n review-latest --wait
+    - echo "https://${BASIC_AUTH_USER}:${BASIC_AUTH_PASS}@${CI_MERGE_REQUEST_IID}.review-latest.kube.opentalk.run"
+
+review-app:
+  stage: cleanup
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH &&
+        $CI_PROJECT_ROOT_NAMESPACE == 'opentalk' &&
+        $CI_PIPELINE_SOURCE == 'push'
+  allow_failure: true
+  image:
+    name: alpine/helm:4.1.1
+    entrypoint: ['']
+    pull_policy: if-not-present
+  tags:
+    - kubernetes
+  before_script:
+    - apk add --no-cache --update curl
+    - apk add --no-cache jq
+    - apk add --no-cache kubectl
+  script:
+    - API_MR_URL="${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/merge_requests"
+    - |
+      MERGE_REQUEST_IID=`curl --header "PRIVATE-TOKEN: ${READ_API_TOKEN}" "${API_MR_URL}?scope=all&state=merged" | \
+      jq --arg COMMIT_SHA $CI_COMMIT_SHA '.[] | select(.merge_commit_sha == $COMMIT_SHA).iid'`
+    - echo $MERGE_REQUEST_IID
+    - echo $CI_MERGE_REQUEST_IID
+    - helm uninstall frontend-$MERGE_REQUEST_IID -n review-latest

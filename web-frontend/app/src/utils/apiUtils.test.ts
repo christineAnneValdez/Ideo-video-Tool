@@ -1,0 +1,17 @@
+// SPDX-FileCopyrightText: OpenTalk GmbH <mail@opentalk.eu>
+//
+// SPDX-License-Identifier: EUPL-1.2
+import { openUserManual, USER_MANUAL_URL } from './apiUtils';
+
+describe('api utils', () => {
+  it('opens user manual in new tab', () => {
+    const restoreWindowOpen = window.open;
+    window.open = vi.fn();
+
+    openUserManual();
+
+    expect(window.open).toHaveBeenCalledExactlyOnceWith(USER_MANUAL_URL, '_blank');
+
+    window.open = restoreWindowOpen;
+  });
+});

@@ -1,0 +1,55 @@
+{
+  "name": "@opentalk/i18next-fluent",
+  "version": "2.0.0",
+  "description": "Updated i18nFormat plugin to use fluent format with i18next",
+  "type": "module",
+  "source": "src/index.ts",
+  "main": "dist/main.cjs",
+  "module": "dist/main.js",
+  "types": "dist/src/index.d.ts",
+  "keywords": [
+    "i18next",
+    "i18next-format",
+    "fluent"
+  ],
+  "dependencies": {
+    "@fluent/bundle": "^0.19.1",
+    "@opentalk/fluent_conv": "workspace:*"
+  },
+  "peerDependencies": {
+    "i18next": "^25.8.12"
+  },
+  "devDependencies": {
+    "i18next": "^25.8.12",
+    "typescript": "^5.9.3",
+    "vite": "^7.3.1",
+    "vite-plugin-dts": "^4.5.4"
+  },
+  "scripts": {
+    "watch": "vite build --watch",
+    "build": "vite build"
+  },
+  "author": "Jan Mühlemann <jan.muehlemann@gmail.com> (https://github.com/jamuhl)",
+  "contributors": [
+    "Rudi Floren <r.floren@heinlein-video.de"
+  ],
+  "license": "MIT",
+  "lock": false,
+  "eslintConfig": {
+    "extends": [
+      "prettier"
+    ]
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  }
+}

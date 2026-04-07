@@ -1,0 +1,49 @@
+# SPDX-FileCopyrightText: OpenTalk GmbH <mail@opentalk.eu>
+#
+# SPDX-License-Identifier: EUPL-1.2
+
+[package]
+authors.workspace = true
+edition = "2024"
+license = "EUPL-1.2"
+name = "opentalk-test-util"
+publish = false
+version.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+diesel = { workspace = true, features = ["serde_json"] }
+diesel-async = { workspace = true, features = ["deadpool", "postgres"] }
+log.workspace = true
+redis.workspace = true
+serde_json.workspace = true
+snafu.workspace = true
+tokio.workspace = true
+
+fern = "0.7"
+pretty_assertions.workspace = true
+
+kustos = { workspace = true, optional = true }
+opentalk-database = { workspace = true, optional = true }
+opentalk-db-storage = { workspace = true, optional = true }
+opentalk-inventory.workspace = true
+opentalk-inventory-database.workspace = true
+opentalk-signaling-core = { workspace = true, features = ["module_tester"] }
+opentalk-types-common = { workspace = true, features = ["backend"] }
+opentalk-types-signaling = { workspace = true, features = ["backend"] }
+opentalk-types-signaling-control = { workspace = true, features = ["backend"] }
+
+[dev-dependencies]
+serde.workspace = true
+
+[features]
+controller = ["database", "dep:kustos"]
+database = ["dep:opentalk-database", "dep:opentalk-db-storage"]
+
+[package.metadata.cargo-machete]
+ignored = [
+  # is used in doctests
+  "serde",
+]

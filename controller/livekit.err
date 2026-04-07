@@ -1,0 +1,39 @@
+2026-04-03T22:10:34.912+0800	INFO	livekit	server/main.go:213	starting in development mode
+2026-04-03T22:10:34.944+0800	INFO	livekit	server/main.go:216	no keys provided, using placeholder keys	{"API Key": "devkey", "API Secret": "secret"}
+2026-04-03T22:10:34.945+0800	ERROR	livekit	hwstats/cpu_null.go:38	CPU monitoring unsupported on current platform. Server capacity management will be disabled
+github.com/livekit/protocol/utils/hwstats.newPlatformCPUMonitor
+	/home/runner/go/pkg/mod/github.com/livekit/protocol@v1.45.2-0.20260327155206-4fe5c0ec0268/utils/hwstats/cpu_null.go:38
+github.com/livekit/protocol/utils/hwstats.NewCPUStats
+	/home/runner/go/pkg/mod/github.com/livekit/protocol@v1.45.2-0.20260327155206-4fe5c0ec0268/utils/hwstats/cpu.go:102
+github.com/livekit/livekit-server/pkg/telemetry/prometheus.Init
+	/home/runner/go/pkg/mod/github.com/livekit/livekit-server@v1.10.1/pkg/telemetry/prometheus/node.go:111
+main.startServer
+	/home/runner/go/pkg/mod/github.com/livekit/livekit-server@v1.10.1/cmd/server/main.go:298
+github.com/urfave/cli/v3.(*Command).run
+	/home/runner/go/pkg/mod/github.com/urfave/cli/v3@v3.3.9/command_run.go:340
+github.com/urfave/cli/v3.(*Command).Run
+	/home/runner/go/pkg/mod/github.com/urfave/cli/v3@v3.3.9/command_run.go:94
+main.main
+	/home/runner/go/pkg/mod/github.com/livekit/livekit-server@v1.10.1/cmd/server/main.go:190
+runtime.main
+	/opt/hostedtoolcache/go/1.25.0/x64/src/runtime/proc.go:285
+2026-04-03T22:10:34.952+0800	INFO	livekit	routing/interfaces.go:180	using single-node routing
+2026-04-03T22:10:34.985+0800	INFO	livekit	service/server.go:265	starting LiveKit server	{"portHttp": 7880, "nodeID": "ND_2wcLkhdP8huR", "nodeIP": "169.254.11.33", "version": "1.10.1", "bindAddresses": ["0.0.0.0"], "rtc.portTCP": 7881, "rtc.portUDP": {"Start":7882,"End":0}}
+2026-04-03T22:10:34.986+0800	INFO	livekit	service/server.go:267	Windows detected, capacity management is unavailable
+2026-04-03T22:10:34.986+0800	DEBUG	livekit	service/signal.go:119	starting relay signal server	{"topic": "ND_2wcLkhdP8huR"}
+2026-04-03T22:10:35.511+0800	INFO	livekit.api	service/twirp.go:146	API RoomService.ListRooms	{"service": "RoomService", "method": "ListRooms", "room": [], "duration": "520.1µs", "status": "200"}
+2026-04-03T22:10:38.524+0800	INFO	livekit.api	service/twirp.go:146	API RoomService.ListRooms	{"service": "RoomService", "method": "ListRooms", "room": [], "duration": "0s", "status": "200"}
+2026-04-03T22:10:41.539+0800	INFO	livekit.api	service/twirp.go:146	API RoomService.ListRooms	{"service": "RoomService", "method": "ListRooms", "room": [], "duration": "0s", "status": "200"}
+2026-04-03T22:10:44.553+0800	INFO	livekit.api	service/twirp.go:146	API RoomService.ListRooms	{"service": "RoomService", "method": "ListRooms", "room": [], "duration": "0s", "status": "200"}
+2026-04-03T22:10:47.573+0800	INFO	livekit.api	service/twirp.go:146	API RoomService.ListRooms	{"service": "RoomService", "method": "ListRooms", "room": [], "duration": "0s", "status": "200"}
+2026-04-03T22:10:50.583+0800	INFO	livekit.api	service/twirp.go:146	API RoomService.ListRooms	{"service": "RoomService", "method": "ListRooms", "room": [], "duration": "0s", "status": "200"}
+2026-04-03T22:10:53.596+0800	INFO	livekit.api	service/twirp.go:146	API RoomService.ListRooms	{"service": "RoomService", "method": "ListRooms", "room": [], "duration": "0s", "status": "200"}
+2026-04-03T22:10:56.604+0800	INFO	livekit.api	service/twirp.go:146	API RoomService.ListRooms	{"service": "RoomService", "method": "ListRooms", "room": [], "duration": "0s", "status": "200"}
+2026-04-03T22:10:59.610+0800	INFO	livekit.api	service/twirp.go:146	API RoomService.ListRooms	{"service": "RoomService", "method": "ListRooms", "room": [], "duration": "0s", "status": "200"}
+2026-04-03T22:11:02.617+0800	INFO	livekit.api	service/twirp.go:146	API RoomService.ListRooms	{"service": "RoomService", "method": "ListRooms", "room": [], "duration": "0s", "status": "200"}
+2026-04-03T22:11:05.626+0800	INFO	livekit.api	service/twirp.go:146	API RoomService.ListRooms	{"service": "RoomService", "method": "ListRooms", "room": [], "duration": "0s", "status": "200"}
+2026-04-03T22:11:08.636+0800	INFO	livekit.api	service/twirp.go:146	API RoomService.ListRooms	{"service": "RoomService", "method": "ListRooms", "room": [], "duration": "0s", "status": "200"}
+2026-04-03T22:11:11.655+0800	INFO	livekit.api	service/twirp.go:146	API RoomService.ListRooms	{"service": "RoomService", "method": "ListRooms", "room": [], "duration": "0s", "status": "200"}
+2026-04-03T22:11:14.672+0800	INFO	livekit.api	service/twirp.go:146	API RoomService.ListRooms	{"service": "RoomService", "method": "ListRooms", "room": [], "duration": "0s", "status": "200"}
+2026-04-03T22:11:17.686+0800	INFO	livekit.api	service/twirp.go:146	API RoomService.ListRooms	{"service": "RoomService", "method": "ListRooms", "room": [], "duration": "0s", "status": "200"}
+2026-04-03T22:11:20.695+0800	INFO	livekit.api	service/twirp.go:146	API RoomService.ListRooms	{"service": "RoomService", "method": "ListRooms", "room": [], "duration": "0s", "status": "200"}

@@ -1,0 +1,40 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended"
+  ],
+  "reviewers": [
+    "@opentalk/tools/renovate-reviewers/backend"
+  ],
+  "packageRules": [
+    {
+      "matchPackagePatterns": [
+        "opentalk-*"
+      ],
+      "groupName": "opentalk",
+      "groupSlug": "opentalk"
+    },
+    {
+      "matchPackagePatterns": [
+        "egui*",
+        "eframe"
+      ],
+      "groupName": "egui",
+      "groupSlug": "egui"
+    },
+    {
+      "matchPackagePatterns": [
+        "livekit*"
+      ],
+      "groupName": "livekit",
+      "groupSlug": "livekit"
+    },
+    {
+      "matchPackagePatterns": [
+        "typst-*"
+      ],
+      "groupName": "typst",
+      "groupSlug": "typst"
+    }
+  ]
+}

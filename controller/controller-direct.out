@@ -1,0 +1,12 @@
+[2m2026-04-03T14:56:15.585989Z[0m [32m INFO[0m [2mopentalk_controller_core[0m[2m:[0m Starting OpenTalk Controller
+[2m2026-04-03T14:56:15.586684Z[0m [32m INFO[0m [2mopentalk_controller_core[0m[2m:[0m Global timezone is Etc/UTC
+[2m2026-04-03T14:56:15.842171Z[0m [32m INFO[0m [1minit[0m[1m{[0m[3moptional_config_path[0m[2m=[0mSome("example/controller.toml")[1m}[0m[2m:[0m [2mopentalk_signaling_core::object_storage[0m[2m:[0m Using MinIO S3 bucket: controller 
+[2m2026-04-03T14:56:16.124609Z[0m [31mERROR[0m [1minit[0m[1m{[0m[3moptional_config_path[0m[2m=[0mSome("example/controller.toml")[1m}[0m[2m:[0m [2mopentalk_controller_core[0m[2m:[0m [3merror[0m[2m=[0mFailed to initialize OIDC Context
+[2m2026-04-03T14:56:16.125497Z[0m [31mERROR[0m [2mopentalk_controller[0m[2m:[0m Error: Failed to init controller
+
+Caused by these errors (recent errors listed first):
+  1: Failed to initialize OIDC Context
+  2: Failed to discover provider client
+  3: Failed to discover provider metadata
+  4: Validation error: unexpected issuer URI `https://accounts.google.com` (expected `https://accounts.google.com/`)
+NOTE: run with `RUST_BACKTRACE=1` environment variable to display a backtrace

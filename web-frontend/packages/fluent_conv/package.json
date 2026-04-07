@@ -1,0 +1,55 @@
+{
+  "name": "@opentalk/fluent_conv",
+  "version": "1.0.0",
+  "description": "Updated fluent2js and js2fluent converter",
+  "type": "module",
+  "source": "src/index.ts",
+  "main": "dist/main.cjs",
+  "module": "dist/main.js",
+  "types": "dist/src/index.d.ts",
+  "dependencies": {
+    "@fluent/syntax": "0.19.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3",
+    "vite": "^7.3.1",
+    "vite-plugin-dts": "^4.5.4"
+  },
+  "scripts": {
+    "watch": "vite build --watch",
+    "build": "vite build"
+  },
+  "keywords": [
+    "fluent",
+    "projectfluent",
+    "json",
+    "js",
+    "translation",
+    "converter"
+  ],
+  "author": "jamuhl",
+  "license": "MIT",
+  "contributors": [
+    "Rudi Floren <r.floren@heinlein-video.de>"
+  ],
+  "files": [
+    "src/**"
+  ],
+  "eslintConfig": {
+    "extends": [
+      "prettier"
+    ]
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  }
+}

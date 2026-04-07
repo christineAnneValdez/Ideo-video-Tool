@@ -1,0 +1,16 @@
+# Local machine installers/downloads
+/DockerDesktopInstaller.exe
+/rustup-init.exe
+/vs_BuildTools.exe
+/tools-downloads/
+
+# Common build outputs
+**/target/
+**/node_modules/
+**/.next/
+**/dist/
+**/build/
+
+# OS/editor clutter
+.DS_Store
+Thumbs.db

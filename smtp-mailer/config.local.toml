@@ -1,0 +1,16 @@
+[rabbit_mq]
+url = "amqp://guest:guest@localhost:5672"
+mail_task_queue = "opentalk_mailer"
+
+[smtp]
+smtp_server = "smtp://localhost:1025?disable_starttls=true"
+from_name = "OpenTalk Local"
+from_email = "no-reply@localhost"
+
+[frontend]
+base_url = "http://localhost:3000"
+data_protection_url = "http://localhost:3000/dataprotection"
+
+[monitoring]
+addr = "0.0.0.0"
+port = 11411

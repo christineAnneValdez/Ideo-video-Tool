@@ -1,0 +1,15 @@
+warning: field `optional_config_path` is never read
+   --> crates\opentalk-controller-core\src\lib.rs:112:5
+    |
+102 | pub struct Controller {
+    |            ---------- field in this struct
+...
+112 |     optional_config_path: Option<PathBuf>,
+    |     ^^^^^^^^^^^^^^^^^^^^
+    |
+    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: `opentalk-controller-core` (lib) generated 1 warning
+    Finished `release` profile [optimized] target(s) in 1m 25s
+     Running `target\release\opentalk-controller.exe -c example/controller.toml`
+^C

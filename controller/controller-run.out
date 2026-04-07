@@ -1,0 +1,26 @@
+[2m2026-04-03T16:10:59.635215Z[0m [32m INFO[0m [2mopentalk_controller_core[0m[2m:[0m Starting OpenTalk Controller
+[2m2026-04-03T16:10:59.635416Z[0m [32m INFO[0m [2mopentalk_controller_core[0m[2m:[0m Global timezone is Etc/UTC
+[2m2026-04-03T16:10:59.746855Z[0m [32m INFO[0m [1minit[0m[1m{[0m[3moptional_config_path[0m[2m=[0mSome("example/controller.toml")[1m}[0m[2m:[0m [2mopentalk_signaling_core::object_storage[0m[2m:[0m Using MinIO S3 bucket: controller 
+[2m2026-04-03T16:11:00.035115Z[0m [32m INFO[0m [1minit[0m[1m{[0m[3moptional_config_path[0m[2m=[0mSome("example/controller.toml")[1m}[0m[2m:[0m [2mopentalk_controller_core[0m[2m:[0m Skipping module 'recording' due to missing configuration
+[2m2026-04-03T16:11:00.040441Z[0m [32m INFO[0m [1minit[0m[1m{[0m[3moptional_config_path[0m[2m=[0mSome("example/controller.toml")[1m}[0m[2m:[0m [2mopentalk_controller_core[0m[2m:[0m Skipping module 'meeting_notes' due to missing configuration
+[2m2026-04-03T16:11:00.040485Z[0m [32m INFO[0m [1minit[0m[1m{[0m[3moptional_config_path[0m[2m=[0mSome("example/controller.toml")[1m}[0m[2m:[0m [2mopentalk_controller_core[0m[2m:[0m Skipping module 'shared_folder' due to missing configuration
+[2m2026-04-03T16:11:00.040503Z[0m [32m INFO[0m [1minit[0m[1m{[0m[3moptional_config_path[0m[2m=[0mSome("example/controller.toml")[1m}[0m[2m:[0m [2mopentalk_controller_core[0m[2m:[0m Skipping module 'whiteboard' due to missing configuration
+[2m2026-04-03T16:11:00.040522Z[0m [32m INFO[0m [1minit[0m[1m{[0m[3moptional_config_path[0m[2m=[0mSome("example/controller.toml")[1m}[0m[2m:[0m [2mopentalk_controller_core[0m[2m:[0m Skipping module 'subroom_audio' due to missing configuration
+[2m2026-04-03T16:11:00.040590Z[0m [32m INFO[0m [2mopentalk_jobs::distributed::job_runner[0m[2m:[0m Starting JobRunner
+[2m2026-04-03T16:11:00.040596Z[0m [32m INFO[0m [2mopentalk_jobs::distributed::job_runner[0m[2m:[0m No etcd configuration, skipping JobRunner
+[2m2026-04-03T16:11:00.040670Z[0m [32m INFO[0m [2mopentalk_controller_core[0m[2m:[0m Making sure the default permissions are set
+[2m2026-04-03T16:11:00.043726Z[0m [32m INFO[0m [2mopentalk_controller_core[0m[2m:[0m Startup finished
+[2m2026-04-03T16:16:12.573153Z[0m [33m WARN[0m [1mHTTP request[0m[1m{[0m[3mhttp.method[0m[2m=[0mGET [3mhttp.route[0m[2m=[0m/signaling [3mhttp.flavor[0m[2m=[0mHTTP/1.1 [3mhttp.scheme[0m[2m=[0mhttp [3mhttp.host[0m[2m=[0mlocalhost:11311 [3mhttp.user_agent[0m[2m=[0mMozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0 [3mhttp.target[0m[2m=[0m/signaling [3motel.kind[0m[2m=[0m"server" [3mrequest_id[0m[2m=[0m0096f3f4-e595-4ff4-b78a-58805bde3c5d [3mhttp.status_code[0m[2m=[0m101 [3motel.status_code[0m[2m=[0m"OK"[1m}[0m[2m:[0m [2mopentalk_controller_core::api::signaling::ws::actor[0m[2m:[0m Protocol error in websocket - exiting, I/O error *
+
+Caused by this error:
+  1: payload reached EOF before completing: None
+
+NOTE: Some redundant information has been removed from the lines marked with *. Set SNAFU_RAW_ERROR_MESSAGES=1 to disable this behavior.
+
+[2m2026-04-03T16:31:21.281238Z[0m [33m WARN[0m [1mHTTP request[0m[1m{[0m[3mhttp.method[0m[2m=[0mGET [3mhttp.route[0m[2m=[0m/signaling [3mhttp.flavor[0m[2m=[0mHTTP/1.1 [3mhttp.scheme[0m[2m=[0mhttp [3mhttp.host[0m[2m=[0mlocalhost:11311 [3mhttp.user_agent[0m[2m=[0mMozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36 Edg/146.0.0.0 [3mhttp.target[0m[2m=[0m/signaling [3motel.kind[0m[2m=[0m"server" [3mrequest_id[0m[2m=[0m5459edc4-763f-4db5-a454-1e24bebcc0aa [3mhttp.status_code[0m[2m=[0m101 [3motel.status_code[0m[2m=[0m"OK"[1m}[0m[2m:[0m [2mopentalk_controller_core::api::signaling::ws::actor[0m[2m:[0m Protocol error in websocket - exiting, I/O error *
+
+Caused by this error:
+  1: payload reached EOF before completing: None
+
+NOTE: Some redundant information has been removed from the lines marked with *. Set SNAFU_RAW_ERROR_MESSAGES=1 to disable this behavior.
+
