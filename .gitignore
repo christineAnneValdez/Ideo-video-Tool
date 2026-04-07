@@ -3,6 +3,7 @@
 /rustup-init.exe
 /vs_BuildTools.exe
 /tools-downloads/
+/controller/tools/minio.exe
 
 # Common build outputs
 **/target/
