@@ -1,0 +1,411 @@
+   Compiling opentalk-signaling-core v0.33.0 (C:\personal works\Ideo-video-Tool\controller\crates\opentalk-signaling-core)
+   Compiling darling v0.20.11
+   Compiling rayon v1.11.0
+   Compiling png v0.17.16
+   Compiling kurbo v0.11.3
+   Compiling font-types v0.10.1
+   Compiling unic-langid-impl v0.9.6
+   Compiling bit-vec v0.8.0
+   Compiling xmlwriter v0.1.0
+   Compiling paste v1.0.15
+   Compiling memmap2 v0.9.10
+   Compiling read-fonts v0.35.0
+   Compiling fontdb v0.23.0
+   Compiling svgtypes v0.15.3
+   Compiling derive_builder_core v0.20.2
+   Compiling unic-langid-macros v0.9.6
+   Compiling bit-set v0.8.0
+   Compiling icu_locid_transform_data v1.5.1
+   Compiling getrandom v0.4.2
+   Compiling prettyplease v0.2.37
+   Compiling moxcms v0.8.1
+   Compiling gif v0.14.1
+   Compiling png v0.18.1
+   Compiling itertools v0.14.0
+   Compiling half v2.7.1
+   Compiling comemo-macros v0.5.1
+   Compiling simplecss v0.2.2
+   Compiling ciborium-io v0.2.2
+   Compiling pico-args v0.5.0
+   Compiling roxmltree v0.20.0
+   Compiling data-url v0.3.2
+   Compiling wasmparser v0.228.0
+   Compiling imagesize v0.13.0
+   Compiling unicode-vo v0.1.0
+   Compiling icu_properties_data v1.5.1
+   Compiling unscanny v0.1.0
+   Compiling usvg v0.45.1
+   Compiling comemo v0.5.1
+   Compiling ciborium-ll v0.2.2
+   Compiling icu_locid_transform v1.5.0
+   Compiling tempfile v3.27.0
+   Compiling unic-langid v0.9.6
+   Compiling fancy-regex v0.16.2
+   Compiling derive_builder_macro v0.20.2
+   Compiling yaml-rust v0.4.5
+   Compiling plist v1.8.0
+   Compiling image v0.25.10
+   Compiling icu_collections v1.5.0
+   Compiling libz-sys v1.1.25
+   Compiling wasmi_core v0.51.5
+   Compiling bincode v1.3.3
+   Compiling enum-ordinalize-derive v4.3.2
+   Compiling unicode-segmentation v1.12.0
+   Compiling by_address v1.2.1
+   Compiling rust_decimal v1.40.0
+   Compiling multimap v0.10.1
+   Compiling codex v0.2.0
+   Compiling unsafe-libyaml v0.2.11
+   Compiling bumpalo v3.20.2
+   Compiling unicode-math-class v0.1.0
+   Compiling palette v0.7.6
+   Compiling roman-numerals-rs v3.1.0
+   Compiling biblatex v0.11.0
+   Compiling typst-utils v0.14.2
+   Compiling serde_yaml v0.9.34+deprecated
+   Compiling wasmi_ir v0.51.5
+   Compiling palette_derive v0.7.6
+   Compiling enum-ordinalize v4.3.2
+   Compiling syntect v5.3.0
+   Compiling skrifa v0.37.0
+   Compiling ciborium v0.2.2
+   Compiling citationberg v0.6.1
+   Compiling zerotrie v0.1.3
+   Compiling itertools v0.12.1
+   Compiling typst-timing v0.14.2
+   Compiling approx v0.5.1
+   Compiling ecow v0.2.6
+   Compiling csv-core v0.1.13
+   Compiling unicode-ident v1.0.24
+   Compiling fast-srgb8 v1.0.0
+   Compiling wasmi_collections v0.51.5
+   Compiling mutate_once v0.1.2
+   Compiling chinese-variant v1.1.5
+   Compiling chinese-number v0.7.8
+   Compiling wasmi v0.51.5
+   Compiling kamadak-exif v0.6.1
+   Compiling typst-syntax v0.14.2
+   Compiling csv v1.4.0
+   Compiling prost-derive v0.12.6
+   Compiling hayagriva v0.9.1
+   Compiling icu_provider_blob v1.5.0
+   Compiling icu_properties v1.5.1
+   Compiling two-face v0.4.5
+   Compiling lipsum v0.9.1
+   Compiling windows-sys v0.59.0
+   Compiling typst-macros v0.14.2
+   Compiling typed-arena v2.0.2
+   Compiling object v0.37.3
+   Compiling itoa v1.0.18
+   Compiling camino v1.2.2
+   Compiling glidesort v0.1.2
+   Compiling typst-assets v0.14.2
+   Compiling bitflags v2.11.0
+   Compiling qcms v0.3.0
+   Compiling az v1.3.0
+   Compiling typst-library v0.14.2
+   Compiling powerfmt v0.2.0
+   Compiling unicase v2.9.0
+   Compiling deranged v0.5.8
+   Compiling prost v0.12.6
+   Compiling winapi-util v0.1.11
+   Compiling vergen-lib v9.1.0
+   Compiling libgit2-sys v0.18.3+1.9.2
+   Compiling prost-types v0.12.6
+   Compiling same-file v1.0.6
+   Compiling time v0.3.47
+   Compiling prost-derive v0.14.3
+   Compiling moxcms v0.7.11
+   Compiling hayro-font v0.3.0
+   Compiling ar_archive_writer v0.5.1
+   Compiling typenum v1.19.0
+   Compiling generic-array v0.14.7
+   Compiling fixedbitset v0.4.2
+   Compiling psm v0.1.30
+   Compiling petgraph v0.6.5
+   Compiling walkdir v2.5.0
+   Compiling vergen v9.1.0
+   Compiling itertools v0.11.0
+   Compiling ptr_meta_derive v0.3.1
+   Compiling pulldown-cmark v0.13.3
+   Compiling icu_segmenter_data v1.5.1
+   Compiling heck v0.4.1
+   Compiling ptr_meta v0.3.1
+   Compiling pbjson-build v0.6.2
+   Compiling prost-build v0.12.6
+   Compiling write-fonts v0.43.0
+   Compiling gif v0.13.3
+   Compiling hayro-interpret v0.4.0
+   Compiling pdf-writer v0.14.0
+   Compiling stacker v0.1.23
+   Compiling native-tls v0.2.18
+   Compiling foldhash v0.1.5
+   Compiling libc v0.2.183
+   Compiling subsetter v0.2.3
+   Compiling hashbrown v0.15.5
+   Compiling hayro-write v0.3.0
+   Compiling hayro v0.4.0
+   Compiling hayro-svg v0.2.0
+   Compiling pbjson-types v0.6.0
+   Compiling rancor v0.1.1
+   Compiling prost v0.14.3
+   Compiling derive_builder v0.20.2
+   Compiling tiny-skia v0.11.4
+   Compiling rgb v0.8.53
+   Compiling hyper-timeout v0.5.2
+   Compiling vergen-git2 v9.1.0
+   Compiling crossbeam-channel v0.5.15
+   Compiling float-cmp v0.10.0
+   Compiling zmij v1.0.21
+   Compiling async-stream-impl v0.3.6
+   Compiling bytecheck_derive v0.8.2
+   Compiling imagesize v0.14.0
+   Compiling xmp-writer v0.3.2
+   Compiling serde_json v1.0.149
+   Compiling fixedbitset v0.5.7
+   Compiling simdutf8 v0.1.5
+   Compiling petgraph v0.8.3
+   Compiling bytecheck v0.8.2
+   Compiling krilla v0.6.0
+   Compiling async-stream v0.3.6
+   Compiling resvg v0.45.1
+   Compiling prost-types v0.14.3
+   Compiling icu_segmenter v1.5.0
+   Compiling pulldown-cmark-to-cmark v22.0.0
+   Compiling typst-svg v0.14.2
+   Compiling crypto-common v0.1.7
+   Compiling block-buffer v0.10.4
+   Compiling icu_provider_adapters v1.5.0
+   Compiling opentalk-database v0.33.0 (C:\personal works\Ideo-video-Tool\controller\crates\opentalk-database)
+   Compiling pbjson v0.6.0
+   Compiling crc32fast v1.5.0
+   Compiling raw-cpuid v11.6.0
+   Compiling munge_macro v0.4.7
+   Compiling indexmap v1.9.3
+   Compiling utf8parse v0.2.2
+   Compiling hypher v0.1.6
+   Compiling xml-rs v0.8.28
+   Compiling anstyle v1.0.14
+   Compiling once_cell_polyfill v1.70.2
+   Compiling basen v0.1.0
+   Compiling anstyle-wincon v3.0.11
+   Compiling serde-xml-rs v0.6.0
+   Compiling typst-layout v0.14.2
+   Compiling quanta v0.12.6
+   Compiling anstyle-parse v1.0.0
+   Compiling munge v0.4.7
+   Compiling digest v0.10.7
+   Compiling typst-html v0.14.2
+   Compiling tokio-native-tls v0.3.1
+   Compiling typst-eval v0.14.2
+   Compiling prost-build v0.14.3
+   Compiling krilla-svg v0.3.0
+   Compiling rend v0.5.3
+   Compiling typst-realize v0.14.2
+   Compiling tonic-build v0.14.5
+   Compiling digest_auth v0.3.1
+   Compiling anstyle-query v1.1.5
+   Compiling rustls-pemfile v1.0.4
+   Compiling livekit-runtime v0.4.0
+   Compiling opentalk-types-signaling-recording v0.43.0
+   Compiling cargo-platform v0.3.2
+   Compiling rkyv_derive v0.8.15
+   Compiling hashbrown v0.12.3
+   Compiling zlib-rs v0.6.3
+   Compiling tagptr v0.2.0
+   Compiling simd-adler32 v0.3.8
+   Compiling is_terminal_polyfill v1.70.2
+   Compiling infer v0.19.0
+   Compiling encode_unicode v1.0.0
+   Compiling yansi v1.0.1
+   Compiling cpufeatures v0.2.17
+   Compiling diff v0.1.13
+   Compiling colorchoice v1.0.5
+   Compiling anstream v1.0.0
+   Compiling pretty_assertions v1.4.1
+   Compiling sha2 v0.10.9
+   Compiling flate2 v1.1.9
+   Compiling console v0.15.11
+   Compiling typst-pdf v0.14.2
+   Compiling zopfli v0.8.3
+   Compiling moka v0.12.15
+   Compiling rkyv v0.8.15
+   Compiling cargo_metadata v0.23.1
+   Compiling livekit-protocol v0.7.1
+   Compiling rustls-native-certs v0.6.3
+   Compiling reqwest_dav v0.3.3
+   Compiling tonic-prost-build v0.14.5
+   Compiling typst v0.14.2
+   Compiling postgres-native-tls v0.5.2
+   Compiling typst-kit v0.14.2
+   Compiling refinery-core v0.9.0
+   Compiling prost-derive v0.13.5
+   Compiling opentalk-controller-service-facade v0.33.0 (C:\personal works\Ideo-video-Tool\controller\crates\opentalk-controller-service-facade)
+   Compiling semver v1.0.27
+   Compiling clap_lex v1.1.0
+   Compiling protobuf v3.7.2
+   Compiling similar v2.7.0
+   Compiling clap_builder v4.6.0
+   Compiling prost v0.13.5
+   Compiling insta v1.46.3
+   Compiling refinery-macros v0.9.0
+   Compiling livekit-api v0.4.15
+   Compiling opentalk-report-generation v0.2.0
+   Compiling opentalk-cache v0.33.0 (C:\personal works\Ideo-video-Tool\controller\crates\opentalk-cache)
+   Compiling etcd-client v0.17.0
+   Compiling opentalk-nextcloud-client v0.3.0
+   Compiling tower v0.4.13
+   Compiling zip v3.0.0
+   Compiling rust-embed-utils v8.11.0
+   Compiling tonic v0.14.5
+   Compiling mime_guess v2.0.5
+   Compiling opentalk-roomserver-types-livekit v0.0.28
+   Compiling protobuf-support v3.7.2
+   Compiling opentalk-types-signaling-moderation v0.43.0
+   Compiling opentalk-types-signaling-breakout v0.43.0
+   Compiling opentalk-mail-worker-protocol v0.43.0
+   Compiling rrule v0.14.0
+   Compiling opentalk-log v0.33.0 (C:\personal works\Ideo-video-Tool\controller\crates\opentalk-log)
+   Compiling prometheus v0.14.0
+   Compiling barrel v0.7.0
+   Compiling tokio-cron-scheduler v0.15.1
+   Compiling kustos-db v0.33.0 (C:\personal works\Ideo-video-Tool\controller\crates\kustos-db)
+   Compiling opentalk-controller-utils v0.33.0 (C:\personal works\Ideo-video-Tool\controller\crates\opentalk-controller-utils)
+   Compiling git2 v0.20.4
+   Compiling opentalk-signaling-module-breakout v0.33.0 (C:\personal works\Ideo-video-Tool\controller\crates\opentalk-signaling-module-breakout)
+   Compiling opentalk-signaling-module-moderation v0.33.0 (C:\personal works\Ideo-video-Tool\controller\crates\opentalk-signaling-module-moderation)
+   Compiling opentalk-roomserver-types-moderation v0.0.28
+   Compiling tonic-prost v0.14.5
+   Compiling tonic v0.12.3
+   Compiling rust-embed-impl v8.11.0
+   Compiling utoipa-swagger-ui v9.0.2
+   Compiling refinery v0.9.0
+   Compiling clap v4.6.0
+   Compiling opentalk-roomserver-types-legal-vote v0.0.28
+   Compiling rustc_version v0.4.1
+   Compiling opentalk-roomserver-types-timer v0.0.28
+   Compiling croner v3.0.1
+   Compiling opentalk-roomserver-types-whiteboard v0.0.28
+   Compiling opentalk-roomserver-types-raise-hands v0.0.28
+   Compiling opentalk-roomserver-types-chat v0.0.28
+   Compiling opentalk-roomserver-types-echo v0.0.28
+   Compiling opentalk-roomserver-types-shared-folder v0.0.28
+   Compiling opentalk-roomserver-types-automod v0.0.28
+   Compiling opentalk-roomserver-types-polls v0.0.28
+   Compiling opentalk-roomserver-types-recording v0.0.28
+   Compiling opentalk-roomserver-types-meeting-report v0.0.28
+   Compiling opentalk-roomserver-types-e2ee v0.0.28
+   Compiling opentalk-roomserver-types-subroom-audio v0.0.28
+   Compiling opentalk-roomserver-types-meeting-notes v0.0.28
+   Compiling opentalk-roomserver-types-training-participation-report v0.0.28
+   Compiling opentalk-keycloak-admin v0.5.1
+   Compiling sharded-slab v0.1.7
+   Compiling opentalk-types-signaling-subroom-audio v0.43.1
+   Compiling matchers v0.2.0
+   Compiling tracing-log v0.2.0
+   Compiling actix_derive v0.6.2
+   Compiling num-derive v0.4.2
+   Compiling proc-macro-error-attr2 v2.0.0
+   Compiling nu-ansi-term v0.50.3
+   Compiling windows-threading v0.2.1
+   Compiling thread_local v1.1.9
+   Compiling cfg_aliases v0.2.1
+   Compiling ntapi v0.4.3
+   Compiling service-probe-common v0.4.0
+   Compiling unicode-width v0.2.2
+   Compiling nix v0.31.2
+   Compiling tracing-subscriber v0.3.23
+   Compiling windows-future v0.3.2
+   Compiling proc-macro-error2 v2.0.1
+   Compiling actix v0.13.5
+   Compiling opentalk-signaling-module-subroom-audio v0.33.0 (C:\personal works\Ideo-video-Tool\controller\crates\opentalk-signaling-module-subroom-audio)
+   Compiling opentalk-roomserver-client v0.0.28
+   Compiling rust-embed v8.11.0
+   Compiling opentalk-db-storage v0.33.0 (C:\personal works\Ideo-video-Tool\controller\crates\opentalk-db-storage)
+   Compiling opentalk-version v0.4.0
+   Compiling opentelemetry-proto v0.29.0
+   Compiling opentalk-types-signaling-recording-service v0.43.0
+   Compiling opentalk-types-signaling-legal-vote v0.15.0
+   Compiling opentelemetry-http v0.29.0
+   Compiling windows-collections v0.3.2
+   Compiling windows-numerics v0.3.1
+   Compiling opentalk-types-signaling-asset-storage v0.4.0
+   Compiling opentalk-types-signaling-training-participation-report v0.14.0
+   Compiling opentalk-types-signaling-polls v0.43.0
+   Compiling opentalk-types-signaling-chat v0.44.0
+   Compiling opentalk-types-signaling-shared-folder v0.43.0
+   Compiling opentalk-types-signaling-automod v0.13.0
+   Compiling opentalk-types-signaling-livekit v0.45.0
+   Compiling opentalk-types-signaling-meeting-notes v0.43.0
+   Compiling opentalk-types-signaling-whiteboard v0.43.0
+   Compiling opentalk-types-signaling-timer v0.43.0
+   Compiling opentalk-types-signaling-meeting-report v0.43.0
+   Compiling bytecount v0.6.9
+   Compiling md5 v0.8.0
+   Compiling opentalk-signaling-module-timer v0.33.0 (C:\personal works\Ideo-video-Tool\controller\crates\opentalk-signaling-module-timer)
+   Compiling opentalk-controller-service v0.33.0 (C:\personal works\Ideo-video-Tool\controller\crates\opentalk-controller-service)
+   Compiling papergrid v0.17.0
+   Compiling opentalk-signaling-module-meeting-report v0.33.0 (C:\personal works\Ideo-video-Tool\controller\crates\opentalk-signaling-module-meeting-report)
+   Compiling opentalk-signaling-module-whiteboard v0.33.0 (C:\personal works\Ideo-video-Tool\controller\crates\opentalk-signaling-module-whiteboard)
+   Compiling opentalk-inventory-database v0.33.0 (C:\personal works\Ideo-video-Tool\controller\crates\opentalk-inventory-database)
+   Compiling opentalk-signaling-module-meeting-notes v0.33.0 (C:\personal works\Ideo-video-Tool\controller\crates\opentalk-signaling-module-meeting-notes)
+   Compiling opentalk-signaling-module-livekit v0.33.0 (C:\personal works\Ideo-video-Tool\controller\crates\opentalk-signaling-module-livekit)
+   Compiling opentalk-signaling-module-automod v0.33.0 (C:\personal works\Ideo-video-Tool\controller\crates\opentalk-signaling-module-automod)
+   Compiling opentalk-signaling-module-chat v0.33.0 (C:\personal works\Ideo-video-Tool\controller\crates\opentalk-signaling-module-chat)
+   Compiling opentalk-signaling-module-shared-folder v0.33.0 (C:\personal works\Ideo-video-Tool\controller\crates\opentalk-signaling-module-shared-folder)
+   Compiling opentalk-signaling-module-polls v0.33.0 (C:\personal works\Ideo-video-Tool\controller\crates\opentalk-signaling-module-polls)
+   Compiling opentalk-signaling-module-training-participation-report v0.33.0 (C:\personal works\Ideo-video-Tool\controller\crates\opentalk-signaling-module-training-participation-report)
+   Compiling opentalk-signaling-module-legal-vote v0.33.0 (C:\personal works\Ideo-video-Tool\controller\crates\opentalk-signaling-module-legal-vote)
+   Compiling opentalk-signaling-module-asset-storage v0.33.0 (C:\personal works\Ideo-video-Tool\controller\crates\opentalk-signaling-module-asset-storage)
+   Compiling windows v0.62.2
+   Compiling opentelemetry-otlp v0.29.0
+   Compiling opentalk-signaling-module-recording v0.33.0 (C:\personal works\Ideo-video-Tool\controller\crates\opentalk-signaling-module-recording)
+   Compiling opentalk-jobs v0.33.0 (C:\personal works\Ideo-video-Tool\controller\crates\opentalk-jobs)
+   Compiling opentelemetry-prometheus v0.29.1
+   Compiling opentalk-controller v0.33.0 (C:\personal works\Ideo-video-Tool\controller\crates\opentalk-controller)
+   Compiling actix-web-actors v4.3.1+deprecated
+   Compiling tracing-opentelemetry v0.30.0
+   Compiling tabled_derive v0.11.0
+   Compiling testing_table v0.3.0
+   Compiling service-probe v0.4.0
+   Compiling opentalk-controller-api-actix-web v0.33.0 (C:\personal works\Ideo-video-Tool\controller\crates\opentalk-controller-api-actix-web)
+   Compiling opentalk-signaling-module-core v0.33.0 (C:\personal works\Ideo-video-Tool\controller\crates\opentalk-signaling-module-core)
+   Compiling opentalk-signaling-module-echo v0.33.0 (C:\personal works\Ideo-video-Tool\controller\crates\opentalk-signaling-module-echo)
+   Compiling actix-cors v0.7.1
+   Compiling actix-ws v0.4.0
+   Compiling rustls-pemfile v2.2.0
+   Compiling hashlink v0.11.0
+   Compiling arraydeque v0.5.1
+   Compiling opentalk-controller-core v0.33.0 (C:\personal works\Ideo-video-Tool\controller\crates\opentalk-controller-core)
+   Compiling yaml-rust2 v0.11.0
+   Compiling sysinfo v0.38.4
+warning: field `optional_config_path` is never read
+   --> crates\opentalk-controller-core\src\lib.rs:112:5
+    |
+102 | pub struct Controller {
+    |            ---------- field in this struct
+...
+112 |     optional_config_path: Option<PathBuf>,
+    |     ^^^^^^^^^^^^^^^^^^^^
+    |
+    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+   Compiling opentalk-signaling-modules v0.33.0 (C:\personal works\Ideo-video-Tool\controller\crates\opentalk-signaling-modules)
+   Compiling tabled v0.20.0
+warning: opentalk-controller@0.33.0: failed to read descriptor: The process cannot access the file because another process has locked a portion of the file.; class=Os (2)
+warning: opentalk-controller@0.33.0: VERGEN_GIT_BRANCH set to default
+warning: opentalk-controller@0.33.0: VERGEN_GIT_COMMIT_AUTHOR_EMAIL set to default
+warning: opentalk-controller@0.33.0: VERGEN_GIT_COMMIT_AUTHOR_NAME set to default
+warning: opentalk-controller@0.33.0: VERGEN_GIT_COMMIT_COUNT set to default
+warning: opentalk-controller@0.33.0: VERGEN_GIT_COMMIT_DATE set to default
+warning: opentalk-controller@0.33.0: VERGEN_GIT_COMMIT_MESSAGE set to default
+warning: opentalk-controller@0.33.0: VERGEN_GIT_COMMIT_TIMESTAMP set to default
+warning: opentalk-controller@0.33.0: VERGEN_GIT_DESCRIBE set to default
+warning: opentalk-controller@0.33.0: VERGEN_GIT_SHA set to default
+warning: opentalk-controller@0.33.0: VERGEN_GIT_DIRTY set to default
+   Compiling service-probe-client v0.4.0
+   Compiling humansize v2.1.3
+   Compiling parse-size v1.1.0
+warning: `opentalk-controller-core` (lib) generated 1 warning
+    Finished `release` profile [optimized] target(s) in 28m 56s
+     Running `target\release\opentalk-controller.exe -c example/controller.toml`

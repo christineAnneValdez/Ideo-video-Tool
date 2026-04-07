@@ -33,20 +33,31 @@
       "standardFlowEnabled": true,
       "directAccessGrantsEnabled": true,
       "protocol": "openid-connect"
+    },
+    {
+      "clientId": "Obelisk",
+      "name": "Obelisk",
+      "enabled": true,
+      "publicClient": false,
+      "secret": "obeliskclientsecret",
+      "serviceAccountsEnabled": true,
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "protocol": "openid-connect"
     }
   ],
   "users": [
     {
-      "username": "alice",
+      "username": "Christine",
       "enabled": true,
       "emailVerified": true,
-      "firstName": "Alice",
+      "firstName": "Christine",
       "lastName": "Local",
-      "email": "alice@example.local",
+      "email": "christine@example.local",
       "credentials": [
         {
           "type": "password",
-          "value": "alice",
+          "value": "Christine",
           "temporary": false
         }
       ]

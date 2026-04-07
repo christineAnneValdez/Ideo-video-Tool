@@ -1,0 +1,17 @@
+**********************************************************************
+** Visual Studio 2022 Developer Command Prompt v17.14.29
+** Copyright (c) 2025 Microsoft Corporation
+**********************************************************************
+OpenTalk public host: localhost
+[2m2026-04-07T15:41:31.429970Z[0m [32m INFO[0m [2mopentalk_controller_core[0m[2m:[0m Starting OpenTalk Controller
+[2m2026-04-07T15:41:31.431217Z[0m [32m INFO[0m [2mopentalk_controller_core[0m[2m:[0m Global timezone is Etc/UTC
+[2m2026-04-07T15:41:31.641914Z[0m [32m INFO[0m [1minit[0m[1m{[0m[3moptional_config_path[0m[2m=[0mSome("example/controller.toml")[1m}[0m[2m:[0m [2mopentalk_signaling_core::object_storage[0m[2m:[0m Using MinIO S3 bucket: controller 
+[2m2026-04-07T15:41:32.074927Z[0m [32m INFO[0m [1minit[0m[1m{[0m[3moptional_config_path[0m[2m=[0mSome("example/controller.toml")[1m}[0m[2m:[0m [2mopentalk_controller_core[0m[2m:[0m Skipping module 'recording' due to missing configuration
+[2m2026-04-07T15:41:32.084645Z[0m [32m INFO[0m [1minit[0m[1m{[0m[3moptional_config_path[0m[2m=[0mSome("example/controller.toml")[1m}[0m[2m:[0m [2mopentalk_controller_core[0m[2m:[0m Skipping module 'meeting_notes' due to missing configuration
+[2m2026-04-07T15:41:32.085153Z[0m [32m INFO[0m [1minit[0m[1m{[0m[3moptional_config_path[0m[2m=[0mSome("example/controller.toml")[1m}[0m[2m:[0m [2mopentalk_controller_core[0m[2m:[0m Skipping module 'shared_folder' due to missing configuration
+[2m2026-04-07T15:41:32.085396Z[0m [32m INFO[0m [1minit[0m[1m{[0m[3moptional_config_path[0m[2m=[0mSome("example/controller.toml")[1m}[0m[2m:[0m [2mopentalk_controller_core[0m[2m:[0m Skipping module 'whiteboard' due to missing configuration
+[2m2026-04-07T15:41:32.085597Z[0m [32m INFO[0m [1minit[0m[1m{[0m[3moptional_config_path[0m[2m=[0mSome("example/controller.toml")[1m}[0m[2m:[0m [2mopentalk_controller_core[0m[2m:[0m Skipping module 'subroom_audio' due to missing configuration
+[2m2026-04-07T15:41:32.086218Z[0m [32m INFO[0m [2mopentalk_jobs::distributed::job_runner[0m[2m:[0m Starting JobRunner
+[2m2026-04-07T15:41:32.086617Z[0m [32m INFO[0m [2mopentalk_jobs::distributed::job_runner[0m[2m:[0m No etcd configuration, skipping JobRunner
+[2m2026-04-07T15:41:32.086922Z[0m [32m INFO[0m [2mopentalk_controller_core[0m[2m:[0m Making sure the default permissions are set
+[2m2026-04-07T15:41:32.094805Z[0m [32m INFO[0m [2mopentalk_controller_core[0m[2m:[0m Startup finished
