@@ -1,0 +1,39 @@
+# Local Obelisk config for this repository setup.
+# Fill in SIP credentials before running in production-like scenarios.
+
+clock_format = "%x %X %Z"
+language = "en"
+
+[auth]
+issuer = "http://localhost:8080/realms/OPENTALK"
+client_id = "Obelisk"
+client_secret = "obeliskclientsecret"
+
+[controller]
+# Local controller process is currently reachable on this port.
+domain = "localhost:11311"
+insecure = true
+
+[monitoring]
+addr = "0.0.0.0"
+port = 11411
+
+[sip]
+addr = "0.0.0.0"
+port = 5070
+
+# Start-only mode:
+# Keep SIP bound locally, but do not register to a SIP provider/PBX yet.
+# Add these later when you have real SIP credentials:
+#username = "your_sip_username"
+#password = "your_sip_password"
+#realm = "your_sip_realm"
+#registrar = "sip:your.sip.server:5060"
+
+# Optional but usually recommended when behind NAT.
+#stun_server = "stun.example.org:3478"
+enforce_qop = true
+
+[sip.rtp_port_range]
+start = 40000
+end = 49999
