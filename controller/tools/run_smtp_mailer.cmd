@@ -11,9 +11,9 @@ if not exist "%MAILER_DIR%\Cargo.toml" (
 
 if "%OPENTALK_CTRL_RABBIT_MQ__URL%"=="" set OPENTALK_CTRL_RABBIT_MQ__URL=amqp://guest:guest@localhost:5672
 if "%OPENTALK_CTRL_RABBIT_MQ__MAIL_TASK_QUEUE%"=="" set OPENTALK_CTRL_RABBIT_MQ__MAIL_TASK_QUEUE=opentalk_mailer
-if "%MAILER_SMTP_SERVER%"=="" set MAILER_SMTP_SERVER=smtp://localhost:1025?disable_starttls=true
+if "%MAILER_SMTP_SERVER%"=="" set MAILER_SMTP_SERVER=smtp://christineannevaldez57%%40gmail.com:phdnaoulbqtkdvtk@smtp.gmail.com:587
 if "%MAILER_FROM_NAME%"=="" set MAILER_FROM_NAME=OpenTalk Local
-if "%MAILER_FROM_EMAIL%"=="" set MAILER_FROM_EMAIL=no-reply@localhost
+if "%MAILER_FROM_EMAIL%"=="" set MAILER_FROM_EMAIL=christineannevaldez57@gmail.com
 if "%OPENTALK_PUBLIC_HOST%"=="" set OPENTALK_PUBLIC_HOST=localhost
 if "%MAILER_FRONTEND_BASE_URL%"=="" set MAILER_FRONTEND_BASE_URL=http://%OPENTALK_PUBLIC_HOST%:3000
 
@@ -21,7 +21,7 @@ set MAILER_CONFIG_PATH=%MAILER_DIR%\config.local.toml
 (
   echo [rabbit_mq]
   echo url = "%OPENTALK_CTRL_RABBIT_MQ__URL%"
-  echo mail_task_queue = "%OPENTALK_CTRL_RABBIT_MQ__MAIL_TASK_QUEUE%"
+  echo queue_name = "%OPENTALK_CTRL_RABBIT_MQ__MAIL_TASK_QUEUE%"
   echo.
   echo [smtp]
   echo smtp_server = "%MAILER_SMTP_SERVER%"

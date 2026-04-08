@@ -1,11 +1,11 @@
 [rabbit_mq]
 url = "amqp://guest:guest@localhost:5672"
-mail_task_queue = "opentalk_mailer"
+queue_name = "opentalk_mailer"
 
 [smtp]
-smtp_server = "smtp://localhost:1025?disable_starttls=true"
+smtp_server = "smtp://christineannevaldez57%40gmail.com:phdnaoulbqtkdvtk@smtp.gmail.com:587"
 from_name = "OpenTalk Local"
-from_email = "no-reply@localhost"
+from_email = "christineannevaldez57@gmail.com"
 
 [frontend]
 base_url = "http://localhost:3000"
