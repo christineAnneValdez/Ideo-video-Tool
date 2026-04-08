@@ -136,7 +136,7 @@ impl ConfigSearchPath {
 pub struct RabbitMqConfig {
     #[serde(default = "rabbitmq_default_url")]
     pub url: String,
-    #[serde(default = "rabbitmq_default_queue_name")]
+    #[serde(default = "rabbitmq_default_queue_name", alias = "mail_task_queue")]
     pub queue_name: String,
     #[serde(default = "rabbitmq_default_task_processing_timeout_seconds")]
     pub task_processing_timeout_seconds: u64,
