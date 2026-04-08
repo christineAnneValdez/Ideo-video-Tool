@@ -1,0 +1,11 @@
+services:
+  asterisk:
+    image: andrius/asterisk:20
+    container_name: opentalk-asterisk-lab
+    restart: unless-stopped
+    ports:
+      - "5060:5060/udp"
+      - "10000-10100:10000-10100/udp"
+    volumes:
+      - ./asterisk/pjsip.conf:/etc/asterisk/pjsip.conf:ro
+      - ./asterisk/extensions.conf:/etc/asterisk/extensions.conf:ro

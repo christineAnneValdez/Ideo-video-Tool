@@ -15,3 +15,4 @@ OpenTalk public host: localhost
 [2m2026-04-07T15:41:32.086617Z[0m [32m INFO[0m [2mopentalk_jobs::distributed::job_runner[0m[2m:[0m No etcd configuration, skipping JobRunner
 [2m2026-04-07T15:41:32.086922Z[0m [32m INFO[0m [2mopentalk_controller_core[0m[2m:[0m Making sure the default permissions are set
 [2m2026-04-07T15:41:32.094805Z[0m [32m INFO[0m [2mopentalk_controller_core[0m[2m:[0m Startup finished
+Terminate batch job (Y/N)? 

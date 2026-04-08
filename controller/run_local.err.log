@@ -409,3 +409,4 @@ warning: opentalk-controller@0.33.0: VERGEN_GIT_DIRTY set to default
 warning: `opentalk-controller-core` (lib) generated 1 warning
     Finished `release` profile [optimized] target(s) in 28m 56s
      Running `target\release\opentalk-controller.exe -c example/controller.toml`
+^C
