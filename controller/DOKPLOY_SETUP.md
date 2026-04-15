@@ -1,66 +1,73 @@
-# Controller deployment on Dokploy
+# OpenTalk deployment on Dokploy
 
-This project now uses `Dockerfile` for building the `opentalk-controller` image with public base images.
+This repository includes two deployment paths:
 
-## 1) Prepare services in Dokploy
+1. Single-stack deployment (recommended for your "one deploy action" goal)
+2. Controller-only deployment (use external Keycloak/LiveKit/MinIO)
 
-Create these services first (same network/project):
+## Option A: Single-stack deployment (Controller + Frontend + Keycloak + deps)
 
-- PostgreSQL
-- Keycloak (or another compatible OIDC provider)
-- LiveKit
-- MinIO
-- Optional: RabbitMQ, Redis
+Use this when you want deployment behavior similar to local startup, where auth is included automatically.
 
-## 2) Create the controller app in Dokploy
+### 1) Create a Compose app in Dokploy
 
-- Source: your Git repository
+- Compose file path: `controller/docker-compose.dokploy.yml`
+- Environment file base: `controller/dokploy.stack.env.example`
+
+### 2) Configure required public values
+
+At minimum set these values in Dokploy:
+
+- `FRONTEND_BASE_URL`
+- `FRONTEND_CONTROLLER_HOST`
+- `OIDC_ISSUER_PUBLIC_URL`
+- `LIVEKIT_PUBLIC_URL`
+- `CONTROLLER_OIDC_CLIENT_SECRET`
+- `LIVEKIT_API_KEY`
+- `LIVEKIT_API_SECRET`
+- `KEYCLOAK_ADMIN_PASSWORD`
+- `POSTGRES_PASSWORD`
+- `KEYCLOAK_DB_PASSWORD`
+- `MINIO_ROOT_PASSWORD`
+
+Important:
+
+- `FRONTEND_BASE_URL` is also used to generate Keycloak redirect URIs automatically.
+- Keep `OIDC_ISSUER_PUBLIC_URL` browser-reachable (for example `https://auth.your-domain.com/realms/OPENTALK`).
+- Keep `FRONTEND_CONTROLLER_HOST` browser-reachable (for example `api.your-domain.com`).
+
+### 3) Expose routes/domains in Dokploy
+
+Expose at least:
+
+- Frontend (`frontend`, container port `80`)
+- Controller (`controller`, container port `11311`)
+- Keycloak (`keycloak`, container port `8080`)
+- LiveKit (`livekit`, container port `7880`)
+
+### 4) First start checks
+
+- Keycloak logs show it imported realm `OPENTALK`.
+- Controller logs show DB connect and HTTP bind.
+- Frontend opens and redirects to Keycloak login.
+
+Default bootstrap user:
+
+- Username: `admin`
+- Password: `admin`
+
+Change this user/password in Keycloak after first login.
+
+## Option B: Controller-only deployment (external services)
+
+If you already host Keycloak/LiveKit/MinIO/Postgres externally, deploy only the controller image with:
+
 - Build context: `controller`
 - Dockerfile path: `Dockerfile`
-- Exposed/container port: `11311`
-
-## 3) Configure environment variables
-
-Use `dokploy.env.example` as your base and set real values in Dokploy UI.
-
-Minimum required variables:
-
-- `OPENTALK_CTRL_FRONTEND__BASE_URL`
-- `OPENTALK_CTRL_DATABASE__URL`
-- `OPENTALK_CTRL_OIDC__AUTHORITY`
-- `OPENTALK_CTRL_OIDC__FRONTEND__CLIENT_ID`
-- `OPENTALK_CTRL_OIDC__CONTROLLER__CLIENT_ID`
-- `OPENTALK_CTRL_OIDC__CONTROLLER__CLIENT_SECRET`
-- `OPENTALK_CTRL_USER_SEARCH__BACKEND`
-- `OPENTALK_CTRL_USER_SEARCH__API_BASE_URL`
-- `OPENTALK_CTRL_LIVEKIT__PUBLIC_URL`
-- `OPENTALK_CTRL_LIVEKIT__SERVICE_URL`
-- `OPENTALK_CTRL_LIVEKIT__API_KEY`
-- `OPENTALK_CTRL_LIVEKIT__API_SECRET`
-- `OPENTALK_CTRL_MINIO__URI`
-- `OPENTALK_CTRL_MINIO__BUCKET`
-- `OPENTALK_CTRL_MINIO__ACCESS_KEY`
-- `OPENTALK_CTRL_MINIO__SECRET_KEY`
-
-Recommended for container hosting:
-
-- `OPENTALK_CTRL_HTTP__ADDR=0.0.0.0`
-- `OPENTALK_CTRL_HTTP__PORT=11311`
-
-## 4) Route traffic
-
-Expose the app via your Dokploy domain/reverse proxy to port `11311` of the container.
-
-## 5) First start checks
-
-- Controller logs should show successful DB migration/connect and HTTP bind.
-- Optional health endpoint:
-  - set `OPENTALK_CTRL_MONITORING__ADDR=0.0.0.0`
-  - set `OPENTALK_CTRL_MONITORING__PORT=11411`
-  - then check `http://<container-or-domain>:11411/health`
-- If startup fails, check service DNS names used in env values (for example `postgres`, `minio`, `livekit`) match Dokploy internal service names.
+- Port: `11311`
+- Environment values from `dokploy.env.example`
 
 ## Notes
 
-- The image includes `/etc/opentalk/controller.toml` from `example/controller.toml`.
-- Your environment variables (`OPENTALK_CTRL_*`) override file values.
+- The controller image includes `/etc/opentalk/controller.toml` from `example/controller.toml`.
+- `OPENTALK_CTRL_*` environment values override file values.
