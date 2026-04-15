@@ -273,8 +273,15 @@ export default defineConfig(({ command, mode }) => {
 
   const getAppVersion = () => {
     if (command === 'build') {
-      const gitCommitHash = execSync('git rev-parse --short HEAD').toString().trim();
-      return gitCommitHash;
+      try {
+        const gitCommitHash = execSync('git rev-parse --short HEAD').toString().trim();
+        if (gitCommitHash) {
+          return gitCommitHash;
+        }
+      } catch {
+        // Docker/CI builds may not include .git metadata
+      }
+      return process.env.VITE_APP_VERSION ?? 'unknown';
     }
     return 'dev';
   };
