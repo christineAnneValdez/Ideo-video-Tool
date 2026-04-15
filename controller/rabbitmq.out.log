@@ -1,0 +1,118 @@
+=CRASH REPORT==== 9-Apr-2026::01:33:54.485000 ===
+  crasher:
+    initial call: os_mon_sysinfo:init/1
+    pid: <0.115.0>
+    registered_name: []
+    exception error: einval
+      in function  open_port/2
+         called as open_port({spawn,"\"c:/Program Files/Erlang OTP/lib/os_mon-2.10.1/priv/bin/win32sysinfo.exe\""},
+                             [{packet,1}])
+         *** argument 1: invalid port name
+      in call from os_mon_sysinfo:start_portprogram/0 (os_mon_sysinfo.erl, line 96)
+      in call from os_mon_sysinfo:init/1 (os_mon_sysinfo.erl, line 62)
+      in call from gen_server:init_it/2 (gen_server.erl, line 2229)
+      in call from gen_server:init_it/6 (gen_server.erl, line 2184)
+    ancestors: [os_mon_sup,<0.113.0>]
+    message_queue_len: 0
+    messages: []
+    links: [<0.114.0>]
+    dictionary: []
+    trap_exit: true
+    status: running
+    heap_size: 610
+    stack_size: 29
+    reductions: 742
+  neighbours:
+
+{=SUPERVISOR REPORT==== 9-Apr-2026::01:33:54.573000 ===
+    supervisor: {local,os_mon_sup}
+    errorContext: start_error
+    reason: {einval,[{erlang,open_port,
+                             [{spawn,"\"c:/Program Files/Erlang OTP/lib/os_mon-2.10.1/priv/bin/win32sysinfo.exe\""},
+                              [{packet,1}]],
+                             [{file,"erlang.erl"},
+                              {line,12788},
+                              {error_info,#{module => erl_erts_errors}}]},
+                     {os_mon_sysinfo,start_portprogram,0,
+                                     [{file,"os_mon_sysinfo.erl"},{line,96}]},
+                     {os_mon_sysinfo,init,1,
+                                     [{file,"os_mon_sysinfo.erl"},{line,62}]},
+                     {gen_server,init_it,2,
+                                 [{file,"gen_server.erl"},{line,2229}]},
+                     {gen_server,init_it,6,
+                                 [{file,"gen_server.erl"},{line,2184}]},
+                     {proc_lib,init_p_do_apply,3,
+                               [{file,"proc_lib.erl"},{line,329}]}]}
+    offender: [{pid,undefined},
+               {id,os_mon_sysinfo},
+               {mfargs,{os_mon_sysinfo,start_link,[]}},
+               {restart_type,permanent},
+               {significant,false},
+               {shutdown,2000},
+               {child_type,worker}]
+
+exit,terminating,[{application_controller,call,2,[{file,"application_controller.erl"},{line,511}]},{application,'-ensure_all_s=INFO REPORT==== 9-Apr-2026::01:33:54.573000 ===
+    application: os_mon
+    exited: {{shutdown,
+                 {failed_to_start_child,os_mon_sysinfo,
+                     {einval,
+                         [{erlang,open_port,
+                              [{spawn,
+                                   "\"c:/Program Files/Erlang OTP/lib/os_mon-2.10.1/priv/bin/win32sysinfo.exe\""},
+                               [{packet,1}]],
+                              [{file,"erlang.erl"},
+                               {line,12788},
+                               {error_info,#{module => erl_erts_errors}}]},
+                          {os_mon_sysinfo,start_portprogram,0,
+                              [{file,"os_mon_sysinfo.erl"},{line,96}]},
+                          {os_mon_sysinfo,init,1,
+                              [{file,"os_mon_sysinfo.erl"},{line,62}]},
+                          {gen_server,init_it,2,
+                              [{file,"gen_server.erl"},{line,2229}]},
+                          {gen_server,init_it,6,
+                              [{file,"gen_server.erl"},{line,2184}]},
+                          {proc_lib,init_p_do_apply,3,
+                              [{file,"proc_lib.erl"},{line,329}]}]}}},
+             {os_mon,start,[normal,[]]}}
+    type: transient
+
+tarted/3-lc$^0/1-0-',1,[{file,"application.erl"},{line,367}]},{application,ensure_all_started,3,[{file,"application.erl"},{line,367}]},{rabbit,'-start_it/1-fun-0-',1,[{=CRASH REPORT==== 9-Apr-2026::01:33:54.573000 ===
+  crasher:
+    initial call: application_master:init/3
+    pid: <0.112.0>
+    registered_name: []
+    exception exit: {{shutdown,
+                      {failed_to_start_child,os_mon_sysinfo,
+                       {einval,
+                        [{erlang,open_port,
+                          [{spawn,
+                            "\"c:/Program Files/Erlang OTP/lib/os_mon-2.10.1/priv/bin/win32sysinfo.exe\""},
+                           [{packet,1}]],
+                          [{file,"erlang.erl"},
+                           {line,12788},
+                           {error_info,#{module => erl_erts_errors}}]},
+                         {os_mon_sysinfo,start_portprogram,0,
+                          [{file,"os_mon_sysinfo.erl"},{line,96}]},
+                         {os_mon_sysinfo,init,1,
+                          [{file,"os_mon_sysinfo.erl"},{line,62}]},
+                         {gen_server,init_it,2,
+                          [{file,"gen_server.erl"},{line,2229}]},
+                         {gen_server,init_it,6,
+                          [{file,"gen_server.erl"},{line,2184}]},
+                         {proc_lib,init_p_do_apply,3,
+                          [{file,"proc_lib.erl"},{line,329}]}]}}},
+                     {os_mon,start,[normal,[]]}}
+      in function  application_master:init/3 (application_master.erl, line 143)
+    ancestors: [application_controller,<0.10.0>]
+    message_queue_len: 1
+    messages: [{'EXIT',<0.113.0>,normal}]
+    links: [<0.45.0>]
+    dictionary: []
+    trap_exit: true
+    status: running
+    heap_size: 987
+    stack_size: 29
+    reductions: 166
+  neighbours:
+
+file,"rabbit.erl"},{line,420}]},{timer,tc,2,[{file,"timer.erl"},{line,595}]},{rabbit,start_it,1,[{file,"rabbit.erl"},{line,418}]},{init,start_it,1,[{file,"init.erl"},{line,1551}]},{init,start_em,1,[{file,"init.erl"},{line,1526}]}]}
