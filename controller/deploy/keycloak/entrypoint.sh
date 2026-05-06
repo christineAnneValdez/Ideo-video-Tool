@@ -46,6 +46,36 @@ cat >"${REALM_FILE}" <<EOF
   ],
   "users": [
     {
+      "username": "user1",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "User",
+      "lastName": "One",
+      "email": "user1@example.local",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "user1",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "user2",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "User",
+      "lastName": "Two",
+      "email": "user2@example.local",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "user2",
+          "temporary": false
+        }
+      ]
+    },
+    {
       "username": "admin",
       "enabled": true,
       "emailVerified": true,
